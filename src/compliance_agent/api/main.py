@@ -9,7 +9,7 @@ import asyncio
 from typing import List, Optional
 from contextlib import asynccontextmanager
 
-from .routers import compliance_router, privacy_router, governance_router
+from .routers import compliance_router, privacy_router, governance_router, remediation_router
 from ..core.compliance_engine import ComplianceEngine
 from ..utils.logger import get_logger
 
@@ -78,6 +78,10 @@ app.include_router(
     governance_router.router,
     prefix="/api/v1/governance",
     tags=["governance"]
+)
+app.include_router(
+    remediation_router.router,
+    tags=["remediation"]
 )
 
 

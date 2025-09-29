@@ -8,6 +8,7 @@ pydantic-settings==2.1.0
 openai==1.3.8
 langchain==0.0.340
 langchain-openai==0.0.2
+langgraph==0.0.69
 transformers==4.36.2
 torch==2.1.1
 scikit-learn==1.3.2
