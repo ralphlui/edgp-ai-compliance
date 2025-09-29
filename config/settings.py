@@ -68,6 +68,31 @@ class Settings(BaseSettings):
     # Singapore-specific settings
     pdpc_notification_threshold: int = 500  # subjects affected
     pdpc_notification_timeframe_hours: int = 72
+
+    # Remediation Agent Settings
+    remediation_agent_enabled: bool = True
+    remediation_max_concurrent_workflows: int = 10
+    remediation_default_timeout_hours: int = 72
+    remediation_enable_notifications: bool = True
+    remediation_auto_retry_failed: bool = True
+    remediation_max_retry_attempts: int = 3
+
+    # AWS SQS Settings
+    aws_region: str = "us-east-1"
+    aws_access_key_id: Optional[str] = None
+    aws_secret_access_key: Optional[str] = None
+
+    # SQS Queue URLs
+    sqs_main_queue_url: Optional[str] = None
+    sqs_dlq_url: Optional[str] = None
+    sqs_high_priority_queue_url: Optional[str] = None
+    sqs_human_intervention_queue_url: Optional[str] = None
+
+    # SQS Configuration
+    sqs_message_retention_period: int = 1209600  # 14 days
+    sqs_visibility_timeout: int = 300  # 5 minutes
+    sqs_receive_message_wait_time: int = 20  # long polling
+    sqs_max_receive_count: int = 3
     
     class Config:
         env_file = ".env"
