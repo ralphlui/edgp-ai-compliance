@@ -40,6 +40,7 @@ def print_service_banner():
 def print_startup_info():
     """Print startup configuration"""
     print("⚙️  Configuration:")
+    print(f"   • Environment: {settings.app_env}")
     print(f"   • Host: {settings.api_host}")
     print(f"   • Port: {settings.api_port}")
     print(f"   • Workers: {settings.api_workers if not settings.debug else 1}")
@@ -47,15 +48,18 @@ def print_startup_info():
     print(f"   • Log Level: {settings.log_level}")
     print()
 
-    # OpenAI status
-    if settings.openai_api_key:
-        print("   ✅ OpenAI API Key: Configured")
+    # AI Agent API status
+    if settings.ai_agent_api_key:
+        print("   ✅ AI Agent API Key: Configured")
+    elif settings.openai_api_key:
+        print("   ✅ OpenAI API Key: Configured (legacy)")
     else:
-        print("   ❌ OpenAI API Key: Not configured")
+        print("   ❌ AI API Key: Not configured")
 
     # AWS/SQS status
     if settings.aws_access_key_id:
         print("   ✅ AWS Credentials: Configured")
+        print(f"   🌍 AWS Region: {settings.aws_region}")
     else:
         print("   ⚠️  AWS Credentials: Using mock mode")
 
@@ -112,10 +116,12 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python main.py                    # Start with default settings
-  python main.py --port 8080        # Start on port 8080
-  python main.py --debug            # Start in debug mode
-  python main.py --workers 4        # Start with 4 workers
+  python main.py                                        # Start with default settings
+  python main.py --port 8080                           # Start on port 8080
+  python main.py --debug                               # Start in debug mode
+  python main.py --app-env production                  # Use production environment
+  python main.py --aws-region ap-southeast-1          # Set AWS region
+  python main.py --ai-agent-api-key your_key_here     # Set AI API key
         """
     )
 
@@ -161,12 +167,63 @@ Examples:
         help="Suppress startup banner"
     )
 
+    # Environment Configuration Arguments
+    parser.add_argument(
+        "--app-env",
+        type=str,
+        help="Application environment (development, sit, production, etc.)"
+    )
+
+    parser.add_argument(
+        "--aws-region",
+        type=str,
+        help="AWS region (e.g., us-east-1, ap-southeast-1)"
+    )
+
+    parser.add_argument(
+        "--aws-access-key-id",
+        type=str,
+        help="AWS Access Key ID"
+    )
+
+    parser.add_argument(
+        "--aws-secret-access-key",
+        type=str,
+        help="AWS Secret Access Key"
+    )
+
+    parser.add_argument(
+        "--ai-agent-api-key",
+        type=str,
+        help="AI Agent API Key (OpenAI, Azure OpenAI, etc.)"
+    )
+
     return parser.parse_args()
 
 
 def main():
     """Main application entry point"""
     args = parse_arguments()
+
+    # Set environment variables from command line arguments if provided
+    if args.app_env:
+        os.environ["APP_ENV"] = args.app_env
+    if args.aws_region:
+        os.environ["AWS_REGION"] = args.aws_region
+    if args.aws_access_key_id:
+        os.environ["AWS_ACCESS_KEY_ID"] = args.aws_access_key_id
+    if args.aws_secret_access_key:
+        os.environ["AWS_SECRET_ACCESS_KEY"] = args.aws_secret_access_key
+    if args.ai_agent_api_key:
+        os.environ["AI_AGENT_API_KEY"] = args.ai_agent_api_key
+
+    # Reload settings after setting environment variables if any env vars were set
+    if (args.app_env or args.aws_region or args.aws_access_key_id or 
+        args.aws_secret_access_key or args.ai_agent_api_key):
+        from config.settings import create_settings
+        global settings
+        settings = create_settings()
+        print(f"🔄 Reloaded configuration with environment: {settings.app_env}")
 
     # Override settings with command line arguments
     host = args.host
