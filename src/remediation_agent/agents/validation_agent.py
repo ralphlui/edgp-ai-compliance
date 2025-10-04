@@ -15,7 +15,7 @@ from ..state.models import (
     RemediationType,
     WorkflowStep
 )
-from compliance_agent.models.compliance_models import ComplianceViolation
+from src.compliance_agent.models.compliance_models import ComplianceViolation
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +82,64 @@ class ValidationAgent:
             "manual_processes": 0.1,
             "regulatory_filings": 0.2
         }
+
+    async def validate_decision(self, decision: RemediationDecision) -> 'ValidationResult':
+        """
+        Validate a remediation decision
+        
+        Args:
+            decision: The remediation decision to validate
+            
+        Returns:
+            ValidationResult with status and details
+        """
+        from ..state.models import ValidationResult, ValidationStatus
+        
+        try:
+            errors = []
+            warnings = []
+            recommendations = []
+            
+            # Check confidence score
+            if decision.confidence_score < 0.3:
+                errors.append("Decision confidence too low")
+            elif decision.confidence_score < 0.6:
+                warnings.append("Low decision confidence")
+                
+            # Check estimated effort
+            if decision.estimated_effort > 480:  # 8 hours
+                warnings.append("High estimated effort")
+                
+            # Determine status
+            if errors:
+                status = ValidationStatus.INVALID
+                confidence = 0.3
+            elif warnings:
+                status = ValidationStatus.WARNING
+                confidence = 0.7
+            else:
+                status = ValidationStatus.VALID
+                confidence = 0.9
+                
+            return ValidationResult(
+                status=status,
+                confidence_score=confidence,
+                validation_errors=errors,
+                warnings=warnings,
+                recommendations=recommendations,
+                details={"decision_type": decision.remediation_type.value}
+            )
+            
+        except Exception as e:
+            logger.error(f"Error validating decision: {str(e)}")
+            return ValidationResult(
+                status=ValidationStatus.INVALID,
+                confidence_score=0.1,
+                validation_errors=[f"Validation error: {str(e)}"],
+                warnings=[],
+                recommendations=[],
+                details={}
+            )
 
     async def validate_remediation_feasibility(
         self,
@@ -398,3 +456,130 @@ class ValidationAgent:
                 base_time += 10  # Low complexity adds 10 minutes
 
         return min(base_time, 480)  # Cap at 8 hours
+        
+    def assess_feasibility(self, actions: List[str], signal: RemediationSignal) -> Dict[str, Any]:
+        """Assess feasibility of remediation actions"""
+        try:
+            action_analysis = self._analyze_remediation_actions(actions)
+            system_check = self._check_system_capabilities(signal)
+            
+            feasibility_score = 0.0
+            for action in actions:
+                action_type = self._classify_action_type(action)
+                pattern_match = self._match_automation_pattern(action)
+                if pattern_match:
+                    feasibility_score += pattern_match.get('feasibility', 0.5)
+                else:
+                    feasibility_score += 0.3
+                    
+            feasibility_score = feasibility_score / len(actions) if actions else 0.1
+            
+            return {
+                "feasibility_score": feasibility_score,
+                "action_analysis": action_analysis,
+                "system_capabilities": system_check,
+                "automation_potential": feasibility_score > 0.6
+            }
+        except Exception as e:
+            logger.error(f"Error assessing feasibility: {str(e)}")
+            return {"feasibility_score": 0.1, "error": str(e)}
+            
+    def _match_automation_pattern(self, action: str) -> Dict[str, Any]:
+        """Match action against automation patterns"""
+        action_lower = action.lower()
+        for pattern_name, pattern_data in self.automation_patterns.items():
+            for keyword in pattern_data['keywords']:
+                if keyword in action_lower:
+                    return pattern_data
+        return {}
+        
+    def validate_workflow(self, workflow) -> 'ValidationResult':
+        """Validate a workflow"""
+        from ..state.models import ValidationResult, ValidationStatus
+        
+        try:
+            errors = []
+            warnings = []
+            
+            if not hasattr(workflow, 'steps') or not workflow.steps:
+                errors.append("Workflow has no steps")
+                
+            if errors:
+                status = ValidationStatus.INVALID
+            else:
+                status = ValidationStatus.VALID
+                
+            return ValidationResult(
+                status=status,
+                confidence_score=0.8 if status == ValidationStatus.VALID else 0.2,
+                validation_errors=errors,
+                warnings=warnings,
+                recommendations=[],
+                details={}
+            )
+        except Exception as e:
+            return ValidationResult(
+                status=ValidationStatus.INVALID,
+                confidence_score=0.1,
+                validation_errors=[str(e)],
+                warnings=[],
+                recommendations=[],
+                details={}
+            )
+            
+    def _calculate_validation_confidence(self, factors: Dict[str, Any]) -> float:
+        """Calculate validation confidence"""
+        try:
+            base_confidence = 0.7
+            
+            if 'feasibility_score' in factors:
+                base_confidence += (factors['feasibility_score'] - 0.5) * 0.4
+                
+            if 'complexity' in factors:
+                base_confidence -= factors['complexity'] * 0.2
+                
+            return max(0.1, min(1.0, base_confidence))
+        except Exception:
+            return 0.5
+            
+    def _validate_step_parameters(self, step) -> Dict[str, Any]:
+        """Validate step parameters"""
+        try:
+            errors = []
+            warnings = []
+            
+            if not hasattr(step, 'parameters') or not step.parameters:
+                errors.append("Step missing parameters")
+                
+            if hasattr(step, 'action_type'):
+                if step.action_type == 'api_call' and 'endpoint' not in step.parameters:
+                    errors.append("API call missing endpoint parameter")
+                elif step.action_type == 'database_operation' and 'query' not in step.parameters:
+                    errors.append("Database operation missing query parameter")
+                    
+            return {
+                "valid": len(errors) == 0,
+                "errors": errors,
+                "warnings": warnings
+            }
+        except Exception as e:
+            return {"valid": False, "errors": [str(e)], "warnings": []}
+            
+    def _estimate_workflow_risk(self, workflow) -> float:
+        """Estimate workflow risk level"""
+        try:
+            base_risk = 0.3
+            
+            if hasattr(workflow, 'steps'):
+                # Higher risk for more steps
+                base_risk += len(workflow.steps) * 0.05
+                
+                # Check for risky operations
+                for step in workflow.steps:
+                    if hasattr(step, 'action_type'):
+                        if step.action_type in ['database_operation', 'data_deletion']:
+                            base_risk += 0.2
+                            
+            return min(1.0, base_risk)
+        except Exception:
+            return 0.5

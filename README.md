@@ -101,15 +101,78 @@ docker-compose logs -f compliance-agent
 
 ## 🔧 Configuration
 
+### Environment-Specific Configuration
+
+The application supports environment-specific configuration files and command-line parameter overrides:
+
+#### Configuration Files
+
+Create environment-specific configuration files:
+
+- `.env.development` - Development environment
+- `.env.sit` - System Integration Testing
+- `.env.production` - Production environment
+
+The `APP_ENV` parameter determines which configuration file to load.
+
+#### Command-Line Usage
+
+```bash
+# Use specific environment
+uv run python -m main --app-env production
+
+# Override AWS region
+uv run python -m main --aws-region ap-southeast-1
+
+# Set AI API key
+uv run python -m main --ai-agent-api-key your_key_here
+
+# Multiple parameters
+uv run python -m main \
+  --app-env production \
+  --aws-region ap-southeast-1 \
+  --aws-access-key-id AKIAXXXXXXXX \
+  --aws-secret-access-key your_secret_key \
+  --ai-agent-api-key your_ai_api_key
+```
+
+#### Core Parameters
+
+The following 5 parameters can be set via command line or environment files:
+
+1. **APP_ENV** - Environment selection (development, sit, production)
+2. **AWS_REGION** - AWS region for services
+3. **AWS_ACCESS_KEY_ID** - AWS access credentials  
+4. **AWS_SECRET_ACCESS_KEY** - AWS secret credentials
+5. **AI_AGENT_API_KEY** - Primary AI API key
+
+#### Configuration Priority
+
+1. Command-line arguments (highest priority)
+2. Environment-specific files (`.env.{APP_ENV}`)
+3. Base `.env` file
+4. Default values (lowest priority)
+
+### Key Configuration Options
+
 Key configuration options in `.env`:
 
 ```bash
+# Environment Selection
+APP_ENV=development
+
 # Database
 DATABASE_URL=postgresql://user:pass@localhost:5432/compliance_db
 
-# AI Settings
-OPENAI_API_KEY=your_openai_api_key
+# AI Settings  
+AI_AGENT_API_KEY=your_ai_agent_api_key
+OPENAI_API_KEY=your_openai_api_key  # For backward compatibility
 AI_MODEL_NAME=gpt-3.5-turbo
+
+# AWS Settings
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
 
 # Singapore PDPA Settings
 PDPC_NOTIFICATION_THRESHOLD=500

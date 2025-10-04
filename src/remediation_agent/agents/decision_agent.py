@@ -28,7 +28,7 @@ from ..state.models import (
     RemediationType,
     RiskLevel
 )
-from compliance_agent.models.compliance_models import (
+from src.compliance_agent.models.compliance_models import (
     ComplianceViolation,
     DataProcessingActivity,
     DataType

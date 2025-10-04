@@ -24,10 +24,9 @@ from .state.models import (
     WorkflowStatus
 )
 from .tools.notification_tool import NotificationTool
-from compliance_agent.models.compliance_models import (
+from src.compliance_agent.models.compliance_models import (
     ComplianceViolation,
     DataProcessingActivity,
-    ComplianceFramework,
     RiskLevel
 )
 

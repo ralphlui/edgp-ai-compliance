@@ -16,7 +16,7 @@ from ..state.models import (
     WorkflowStep,
     RemediationType
 )
-from compliance_agent.models.compliance_models import (
+from src.compliance_agent.models.compliance_models import (
     DataType,
     RiskLevel,
     ComplianceViolation
@@ -181,6 +181,87 @@ class RemediationValidator:
             validation_results["overall_valid"] = False
             validation_results["errors"].append(f"Validation error: {str(e)}")
             return validation_results
+            
+    def _check_database_state(self, user_id: str) -> Dict[str, Any]:
+        """Check database state for user"""
+        try:
+            # Mock database check - in real implementation would check actual DB
+            return {
+                "valid": True,
+                "user_exists": True,
+                "confidence": 0.9
+            }
+        except Exception as e:
+            return {
+                "valid": False,
+                "error": str(e),
+                "confidence": 0.1
+            }
+            
+    async def _verify_system_availability(self, system_name: str) -> Dict[str, Any]:
+        """Verify system availability"""
+        try:
+            # Mock system check - in real implementation would ping actual systems
+            return {
+                "available": True,
+                "response_time": 50,
+                "confidence": 0.9
+            }
+        except Exception as e:
+            return {
+                "available": False,
+                "error": str(e),
+                "confidence": 0.1
+            }
+            
+    def _check_data_relationships(self, user_id: str) -> Dict[str, Any]:
+        """Check data relationships"""
+        try:
+            # Mock relationship check
+            return {
+                "valid": True,
+                "orphaned_records": 0,
+                "confidence": 0.9
+            }
+        except Exception as e:
+            return {
+                "valid": False,
+                "error": str(e),
+                "confidence": 0.1
+            }
+            
+    def _verify_backup_exists(self, table_name: str) -> Dict[str, Any]:
+        """Verify backup exists"""
+        try:
+            # Mock backup check
+            return {
+                "exists": True,
+                "backup_id": "backup-123",
+                "confidence": 0.9
+            }
+        except Exception as e:
+            return {
+                "exists": False,
+                "error": str(e),
+                "confidence": 0.1
+            }
+            
+    def _calculate_validation_score(self, checks: Dict[str, Any]) -> float:
+        """Calculate overall validation score"""
+        try:
+            scores = []
+            for check_name, check_result in checks.items():
+                if isinstance(check_result, dict):
+                    if 'confidence' in check_result:
+                        scores.append(check_result['confidence'])
+                    elif 'valid' in check_result:
+                        scores.append(0.9 if check_result['valid'] else 0.1)
+                    elif 'available' in check_result:
+                        scores.append(0.9 if check_result['available'] else 0.1)
+            
+            return sum(scores) / len(scores) if scores else 0.5
+        except Exception:
+            return 0.1
 
     async def _validate_signal(self, signal: RemediationSignal) -> Dict[str, Any]:
         """Validate the remediation signal"""

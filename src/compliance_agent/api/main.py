@@ -1,55 +1,115 @@
 """
 FastAPI application for AI Compliance Agent
+Production-ready with health checks, metrics, and graceful shutdown
 """
 
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import asyncio
+import signal
+import sys
 from typing import List, Optional
 from contextlib import asynccontextmanager
 
 from .routers import compliance_router, privacy_router, governance_router, remediation_router
+from . import health, metrics
 from ..core.compliance_engine import ComplianceEngine
 from ..utils.logger import get_logger
+from config.settings import settings
 
 logger = get_logger(__name__)
 
 # Global compliance engine instance
 compliance_engine = None
+_shutdown_event = asyncio.Event()
+
+
+def setup_signal_handlers():
+    """Setup graceful shutdown signal handlers"""
+
+    def handle_shutdown(signum, frame):
+        """Handle shutdown signals"""
+        logger.info(f"Received shutdown signal: {signal.Signals(signum).name}")
+        _shutdown_event.set()
+
+    signal.signal(signal.SIGTERM, handle_shutdown)
+    signal.signal(signal.SIGINT, handle_shutdown)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan manager"""
+    """Application lifespan manager with graceful shutdown"""
     global compliance_engine
-    logger.info("Starting AI Compliance Agent API")
-    
+
+    logger.info("🚀 Starting AI Compliance Agent API")
+    logger.info(f"Environment: {settings.environment}")
+    logger.info(f"Version: {settings.app_version}")
+
+    # Setup signal handlers for graceful shutdown
+    setup_signal_handlers()
+
     # Initialize compliance engine
-    compliance_engine = ComplianceEngine()
-    await compliance_engine.initialize()
-    
+    try:
+        compliance_engine = ComplianceEngine()
+        await compliance_engine.initialize()
+        logger.info("✅ Compliance engine initialized successfully")
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize compliance engine: {e}")
+        raise
+
     yield
-    
-    logger.info("Shutting down AI Compliance Agent API")
+
+    # Graceful shutdown
+    logger.info("🛑 Initiating graceful shutdown...")
+
+    # Cleanup tasks
+    cleanup_tasks = []
+
+    # Close compliance engine
+    if compliance_engine:
+        try:
+            if hasattr(compliance_engine, 'close'):
+                cleanup_tasks.append(compliance_engine.close())
+            logger.info("✅ Compliance engine shutdown complete")
+        except Exception as e:
+            logger.error(f"❌ Error closing compliance engine: {e}")
+
+    # Wait for cleanup with timeout
+    if cleanup_tasks:
+        try:
+            await asyncio.wait_for(
+                asyncio.gather(*cleanup_tasks, return_exceptions=True),
+                timeout=30.0
+            )
+        except asyncio.TimeoutError:
+            logger.warning("⚠️  Cleanup timeout exceeded, forcing shutdown")
+
+    logger.info("👋 Shutdown complete")
 
 
 # Create FastAPI application
 app = FastAPI(
-    title="AI Compliance Agent",
+    title=settings.app_name,
     description="AI-powered compliance checking for PDPA, international data privacy, and data governance",
-    version="1.0.0",
-    lifespan=lifespan
+    version=settings.app_version,
+    lifespan=lifespan,
+    docs_url="/docs" if not settings.is_production() or settings.debug else None,
+    redoc_url="/redoc" if not settings.is_production() or settings.debug else None,
 )
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=settings.allowed_methods,
+    allow_headers=settings.allowed_headers,
 )
+
+# Add metrics middleware if enabled
+if settings.metrics_enabled:
+    app.add_middleware(metrics.MetricsMiddleware)
 
 
 # Dependency to get compliance engine
@@ -63,7 +123,12 @@ async def get_compliance_engine() -> ComplianceEngine:
     return compliance_engine
 
 
-# Include routers
+# Include health check and metrics routers
+app.include_router(health.router)
+if settings.metrics_enabled:
+    app.include_router(metrics.router)
+
+# Include business logic routers
 app.include_router(
     compliance_router.router,
     prefix="/api/v1/compliance",
@@ -85,31 +150,56 @@ app.include_router(
 )
 
 
-@app.get("/")
+@app.get("/", tags=["Root"])
 async def root():
-    """Root endpoint"""
+    """Root endpoint - service information"""
     return {
-        "message": "AI Compliance Agent API",
-        "version": "1.0.0",
-        "description": "AI-powered compliance checking for PDPA, international data privacy, and data governance"
+        "message": f"{settings.app_name} API",
+        "version": settings.app_version,
+        "environment": settings.environment,
+        "description": "AI-powered compliance checking for PDPA, international data privacy, and data governance",
+        "docs_url": "/docs" if not settings.is_production() or settings.debug else None,
+        "health_check": "/health",
+        "readiness_check": "/health/ready",
+        "liveness_check": "/health/live",
+        "metrics": "/metrics" if settings.metrics_enabled else None
     }
 
 
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "service": "ai-compliance-agent",
-        "engine_initialized": compliance_engine is not None
-    }
+@app.middleware("http")
+async def request_logging_middleware(request: Request, call_next):
+    """Log all requests"""
+    logger.info(f"{request.method} {request.url.path}")
+    response = await call_next(request)
+    logger.info(f"{request.method} {request.url.path} - {response.status_code}")
+    return response
 
 
 @app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
-    """Global exception handler"""
-    logger.error(f"Unhandled exception: {str(exc)}")
+async def global_exception_handler(request: Request, exc: Exception):
+    """Global exception handler with detailed logging"""
+    logger.error(
+        f"Unhandled exception",
+        exc_info=exc,
+        extra={
+            "path": request.url.path,
+            "method": request.method,
+            "client": request.client.host if request.client else None
+        }
+    )
+
+    # Don't expose internal errors in production
+    if settings.is_production() and not settings.debug:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error"}
+        )
+
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal server error"}
+        content={
+            "detail": "Internal server error",
+            "error": str(exc),
+            "type": type(exc).__name__
+        }
     )
