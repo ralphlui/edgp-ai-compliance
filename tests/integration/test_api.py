@@ -23,9 +23,17 @@ class TestComplianceAPI:
     """Test compliance API endpoints"""
     
     @pytest.fixture
-    def client(self):
-        """Create test client"""
-        return TestClient(app)
+    def client(self, mock_compliance_engine):
+        """Create test client with mocked dependencies"""
+        from src.compliance_agent.api.routers.compliance_router import get_compliance_engine
+        
+        # Override the dependency
+        app.dependency_overrides[get_compliance_engine] = lambda: mock_compliance_engine
+        
+        yield TestClient(app)
+        
+        # Clean up
+        app.dependency_overrides.clear()
     
     @pytest.fixture
     def sample_activity_data(self):
@@ -109,11 +117,8 @@ class TestComplianceAPI:
         assert "high" in risk_level_codes
         assert "critical" in risk_level_codes
     
-    @patch('src.compliance_agent.api.main.get_compliance_engine')
-    def test_check_compliance(self, mock_get_engine, client, sample_activity_data, mock_compliance_engine):
+    def test_check_compliance(self, client, sample_activity_data, mock_compliance_engine):
         """Test compliance check endpoint"""
-        # Setup mock
-        mock_get_engine.return_value = mock_compliance_engine
         
         mock_assessment = ComplianceAssessment(
             id="test_assessment",
@@ -151,7 +156,9 @@ class TestPrivacyAPI:
     @pytest.fixture
     def client(self):
         """Create test client"""
-        return TestClient(app)
+        yield TestClient(app)
+        # Clean up any overrides
+        app.dependency_overrides.clear()
     
     def test_get_data_subject_rights(self, client):
         """Test get data subject rights endpoint"""
@@ -215,12 +222,12 @@ class TestPrivacyAPI:
         assert "consent_id" in data
         assert "withdrawn" in data["message"].lower()
     
-    @patch('src.compliance_agent.api.main.get_compliance_engine')
-    def test_conduct_pia(self, mock_get_engine, client):
+    def test_conduct_pia(self, client):
         """Test conduct PIA endpoint"""
+        from src.compliance_agent.api.routers.privacy_router import get_compliance_engine
+        
         # Setup mock
         mock_engine = Mock()
-        mock_get_engine.return_value = mock_engine
         
         sample_activity = DataProcessingActivity(
             id="pia_activity",
@@ -243,6 +250,9 @@ class TestPrivacyAPI:
             requires_consultation=False
         )
         mock_engine.conduct_privacy_impact_assessment = AsyncMock(return_value=mock_pia)
+        
+        # Override dependency
+        app.dependency_overrides[get_compliance_engine] = lambda: mock_engine
         
         # Make request
         request_data = {

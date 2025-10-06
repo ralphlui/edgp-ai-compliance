@@ -468,22 +468,21 @@ class RemediationGraph:
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }
 
+    def build_graph(self) -> StateGraph:
+        """Public method to access the compiled graph structure.
+        
+        Returns:
+            StateGraph: The compiled LangGraph state graph
+        """
+        return self.graph
+
     def print_graph_ascii(self) -> str:
-        """Print the ASCII representation of the graph"""
+        """Print ASCII representation of the graph (requires grandalf)"""
         try:
-            ascii_graph = self.compiled_graph.get_graph().draw_ascii()
-            print("\n" + "="*80)
-            print("🔗 REMEDIATION AGENT LANGGRAPH STRUCTURE")
-            print("="*80)
-            print(ascii_graph)
-            print("="*80)
-            print()
-            return ascii_graph
+            return self.graph.get_graph().draw_ascii()
         except Exception as e:
-            error_msg = f"Could not display graph ASCII: {str(e)}"
-            logger.warning(error_msg)
-            print(f"⚠️  {error_msg}")
-            return error_msg
+            logger.warning("Could not display graph ASCII: %s", e)
+            return "Graph visualization unavailable (install grandalf: pip install grandalf)"
 
     def get_graph_ascii(self) -> str:
         """Get the ASCII representation of the graph as a string"""

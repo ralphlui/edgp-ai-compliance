@@ -20,6 +20,7 @@ _start_time = time.time()
 class HealthStatus(BaseModel):
     """Health check response model"""
     status: str
+    service: str = "AI Compliance Agent"
     timestamp: datetime
     uptime_seconds: float
     version: str

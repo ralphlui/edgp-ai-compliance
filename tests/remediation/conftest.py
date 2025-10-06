@@ -25,7 +25,8 @@ from src.compliance_agent.models.compliance_models import (
     ComplianceViolation,
     DataProcessingActivity,
     RiskLevel,
-    DataType
+    DataType,
+    ComplianceFramework
 )
 
 
@@ -350,3 +351,72 @@ def mock_uuid():
         mock_uuid4.return_value.hex = test_uuid
         with patch('str', return_value=test_uuid):
             yield test_uuid
+
+@pytest.fixture
+def sample_automatic_decision(
+    sample_compliance_violation: ComplianceViolation,
+    sample_data_processing_activity: DataProcessingActivity,
+) -> RemediationDecision:
+    return RemediationDecision(
+        violation_id=sample_compliance_violation.rule_id,
+        activity_id=sample_data_processing_activity.id,
+        remediation_type=RemediationType.AUTOMATIC,
+        confidence_score=0.9,
+        reasoning="Simple data preference update with high confidence",
+        estimated_effort=15,
+        risk_if_delayed=RiskLevel.LOW,
+    )
+
+
+@pytest.fixture
+def sample_human_in_loop_decision(
+    sample_compliance_violation: ComplianceViolation,
+    sample_data_processing_activity: DataProcessingActivity,
+) -> RemediationDecision:
+    return RemediationDecision(
+        violation_id=sample_compliance_violation.rule_id,
+        activity_id=sample_data_processing_activity.id,
+        remediation_type=RemediationType.HUMAN_IN_LOOP,
+        confidence_score=0.75,
+        reasoning="Data deletion requires human oversight",
+        estimated_effort=60,
+        risk_if_delayed=RiskLevel.MEDIUM,
+        prerequisites=["dpo_approval"],
+    )
+
+
+@pytest.fixture
+def sample_manual_decision(
+    sample_compliance_violation: ComplianceViolation,
+    sample_data_processing_activity: DataProcessingActivity,
+) -> RemediationDecision:
+    return RemediationDecision(
+        violation_id=sample_compliance_violation.rule_id,
+        activity_id=sample_data_processing_activity.id,
+        remediation_type=RemediationType.MANUAL_ONLY,
+        confidence_score=0.6,
+        reasoning="Complex legal changes require manual implementation",
+        estimated_effort=480,
+        risk_if_delayed=RiskLevel.CRITICAL,
+        prerequisites=["legal_review", "executive_signoff"],
+    )
+
+
+@pytest.fixture
+def sample_violation(
+    sample_compliance_violation: ComplianceViolation,
+) -> ComplianceViolation:
+    """Mirror of the workflow test violation fixture."""
+
+    return ComplianceViolation(
+        id=sample_compliance_violation.rule_id,
+        violation_type="unauthorized_data_processing",
+        description=sample_compliance_violation.description,
+        risk_level=sample_compliance_violation.risk_level,
+        framework=ComplianceFramework.GDPR_EU,
+        data_subject_id="user-456",
+        affected_data_types=[DataType.PERSONAL_DATA],
+        remediation_actions=sample_compliance_violation.remediation_actions,
+        evidence={"log_entry": "Unauthorized access detected"},
+        detection_timestamp="2024-01-15T10:30:00Z",
+    )
