@@ -97,13 +97,13 @@ class TestRemediationDecision:
         with pytest.raises(ValidationError) as exc_info:
             RemediationDecision(
                 violation_id="test_id",
-                remediation_type=RemediationType.AUTOMATIC,
-                confidence_score=0.8,
-                reasoning="Test reasoning",
-                estimated_effort=-1,  # Invalid: negative
-                risk_if_delayed=RiskLevel.HIGH
-            )
-        assert "Input should be greater than 0" in str(exc_info.value)
+            remediation_type=RemediationType.AUTOMATIC,
+            confidence_score=0.8,
+            reasoning="Test reasoning",
+            estimated_effort=-1,  # Invalid: negative
+            risk_if_delayed=RiskLevel.HIGH
+        )
+        assert "Input should be greater than or equal to 0" in str(exc_info.value)
     
     def test_remediation_decision_defaults(self):
         """Test default values for optional fields"""
@@ -163,7 +163,7 @@ class TestWorkflowStep:
                 action_type="test_action",
                 estimated_duration_minutes=-5  # Invalid: negative
             )
-        assert "Input should be greater than 0" in str(exc_info.value)
+        assert "Input should be greater than or equal to 0" in str(exc_info.value)
 
 
 class TestRemediationWorkflow:

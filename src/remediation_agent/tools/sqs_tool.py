@@ -8,11 +8,11 @@ for remediation workflows.
 import boto3
 import logging
 import os
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, TYPE_CHECKING
 from datetime import datetime, timezone
 import json
 
-from botocore.exceptions import ClientError, BotoCoreError
+from botocore.exceptions import ClientError
 
 # Import settings - handle import gracefully
 try:
@@ -21,6 +21,10 @@ try:
 except ImportError:
     SETTINGS_AVAILABLE = False
     settings = None
+
+# Use TYPE_CHECKING to avoid circular imports
+if TYPE_CHECKING:
+    from ..state.models import RemediationSignal
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +47,9 @@ class SQSTool:
         else:
             self.region_name = region_name or os.getenv("AWS_REGION", "us-east-1")
         self.sqs_client = None
+        
+        # Initialize queue_urls dictionary for tracking configured queues
+        self.queue_urls: Dict[str, str] = {}
 
         # Load environment configuration
         self.config = self._load_sqs_config()
@@ -567,6 +574,160 @@ class SQSTool:
         }
 
     def is_configured(self) -> bool:
-        """Check if SQS queues are properly configured in environment"""
-        required_queues = ['main_queue_url', 'dlq_url', 'human_intervention_queue_url']
-        return all(self.config.get(queue) for queue in required_queues)
+        """Check if the SQS tool has been properly configured"""
+        return self.sqs_client is not None and len(self.queue_urls) > 0
+
+    # ============================================================================
+    # Signal-focused wrapper methods for backward compatibility
+    # ============================================================================
+
+    async def send_remediation_signal(
+        self,
+        signal: "RemediationSignal",
+        delay_seconds: int = 0,
+        queue_url: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Send a remediation signal to the queue.
+        
+        Wrapper around send_workflow_message that accepts RemediationSignal.
+        
+        Args:
+            signal: The remediation signal to send
+            delay_seconds: Delay before message becomes available (0-900 seconds)
+            queue_url: Optional specific queue URL, uses default if not provided
+            
+        Returns:
+            Dict containing:
+            - success: Whether the send was successful
+            - message_id: The SQS message ID
+            - queue_url: The queue URL used
+        """
+        # Convert signal to workflow format expected by send_workflow_message
+        workflow_data = {
+            "workflow_id": signal.signal_id,
+            "signal_id": signal.signal_id,
+            "violation_id": signal.violation_id,
+            "activity_id": signal.activity_id,
+            "violation": signal.violation.model_dump() if signal.violation else None,
+            "activity": signal.activity.model_dump() if signal.activity else None,
+            "decision": signal.decision.model_dump() if signal.decision else None,
+            "validation": signal.validation.model_dump() if signal.validation else None,
+            "workflow_summary": signal.workflow_summary.model_dump() if signal.workflow_summary else None,
+            "metadata": signal.metadata,
+        }
+        
+        # Use provided queue_url or default to first configured queue
+        if queue_url is None:
+            queue_url = self.queue_urls.get("default") or next(iter(self.queue_urls.values()), None)
+            if queue_url is None:
+                return {
+                    "success": False,
+                    "error": "No queue URL configured",
+                }
+        
+        return await self.send_workflow_message(
+            workflow_data, queue_url, delay_seconds=delay_seconds
+        )
+
+    async def receive_remediation_signals(
+        self,
+        max_messages: int = 1,
+        wait_time_seconds: int = 0,
+        queue_url: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Receive remediation signals from the queue.
+        
+        Wrapper around receive_workflow_messages for signal-focused API.
+        
+        Args:
+            max_messages: Maximum number of messages to receive (1-10)
+            wait_time_seconds: Long polling wait time (0-20 seconds)
+            queue_url: Optional specific queue URL, uses default if not provided
+            
+        Returns:
+            Dict containing:
+            - messages: List of received messages
+            - count: Number of messages received
+        """
+        # Use provided queue_url or default to first configured queue
+        if queue_url is None:
+            queue_url = self.queue_urls.get("default") or next(iter(self.queue_urls.values()), None)
+            if queue_url is None:
+                return {
+                    "success": False,
+                    "messages": [],
+                    "count": 0,
+                    "error": "No queue URL configured",
+                }
+        
+        return await self.receive_workflow_messages(
+            queue_url, max_messages=max_messages, wait_time_seconds=wait_time_seconds
+        )
+
+    def serialize_remediation_signal(self, signal: "RemediationSignal") -> str:
+        """Serialize a remediation signal to JSON string.
+        
+        Args:
+            signal: The remediation signal to serialize
+            
+        Returns:
+            str: JSON string representation of the signal
+        """
+        return json.dumps(
+            {
+                "signal_id": signal.signal_id,
+                "violation_id": signal.violation_id,
+                "activity_id": signal.activity_id,
+                "violation": signal.violation.model_dump() if signal.violation else None,
+                "activity": signal.activity.model_dump() if signal.activity else None,
+                "decision": signal.decision.model_dump() if signal.decision else None,
+                "validation": signal.validation.model_dump() if signal.validation else None,
+                "workflow_summary": signal.workflow_summary.model_dump() if signal.workflow_summary else None,
+                "metadata": signal.metadata,
+            },
+            default=str,
+        )
+
+    def create_message_attributes(
+        self, signal: "RemediationSignal"
+    ) -> Dict[str, Dict[str, str]]:
+        """Create SQS message attributes from a remediation signal.
+        
+        Args:
+            signal: The remediation signal
+            
+        Returns:
+            Dict of message attributes for SQS
+        """
+        attributes = {
+            "signal_id": {"StringValue": signal.signal_id, "DataType": "String"},
+            "violation_id": {"StringValue": signal.violation_id, "DataType": "String"},
+        }
+        
+        if signal.activity_id:
+            attributes["activity_id"] = {
+                "StringValue": signal.activity_id,
+                "DataType": "String",
+            }
+        
+        if signal.violation:
+            attributes["violation_type"] = {
+                "StringValue": signal.violation.violation_type,
+                "DataType": "String",
+            }
+            attributes["risk_level"] = {
+                "StringValue": signal.violation.risk_level.value,
+                "DataType": "String",
+            }
+        
+        if signal.decision:
+            attributes["remediation_type"] = {
+                "StringValue": signal.decision.remediation_type.value,
+                "DataType": "String",
+            }
+            attributes["priority"] = {
+                "StringValue": str(signal.decision.priority),
+                "DataType": "Number",
+            }
+        
+        return attributes

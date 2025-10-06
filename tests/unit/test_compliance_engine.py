@@ -3,6 +3,7 @@ Unit tests for the compliance engine
 """
 
 import pytest
+import pytest_asyncio
 import asyncio
 from unittest.mock import Mock, AsyncMock, patch
 from datetime import datetime
@@ -22,7 +23,7 @@ from src.compliance_agent.models.compliance_models import (
 class TestComplianceEngine:
     """Test the main compliance engine functionality"""
     
-    @pytest.fixture
+    @pytest_asyncio.fixture
     async def engine(self):
         """Create a compliance engine instance for testing"""
         engine = ComplianceEngine()
@@ -125,7 +126,8 @@ class TestComplianceEngine:
                     assert len(assessments) == 1
                     mock_ai.assert_not_called()
     
-    def test_calculate_compliance_score_no_violations(self, engine):
+    @pytest.mark.asyncio
+    async def test_calculate_compliance_score_no_violations(self, engine):
         """Test compliance score calculation with no violations"""
         violations = []
         rules = []
@@ -133,7 +135,8 @@ class TestComplianceEngine:
         score = engine._calculate_compliance_score(violations, rules)
         assert score == 100.0
     
-    def test_calculate_compliance_score_with_violations(self, engine):
+    @pytest.mark.asyncio
+    async def test_calculate_compliance_score_with_violations(self, engine):
         """Test compliance score calculation with violations"""
         from src.compliance_agent.models.compliance_models import ComplianceViolation
         
@@ -158,7 +161,8 @@ class TestComplianceEngine:
         score = engine._calculate_compliance_score(violations, rules)
         assert 0 <= score < 100
     
-    def test_determine_compliance_status(self, engine):
+    @pytest.mark.asyncio
+    async def test_determine_compliance_status(self, engine):
         """Test compliance status determination"""
         from src.compliance_agent.models.compliance_models import ComplianceViolation
         
@@ -235,7 +239,8 @@ class TestComplianceEngine:
             assert pia.overall_risk in [RiskLevel.LOW, RiskLevel.MEDIUM, RiskLevel.HIGH, RiskLevel.CRITICAL]
             assert isinstance(pia.requires_consultation, bool)
     
-    def test_risk_score_to_level(self, engine):
+    @pytest.mark.asyncio
+    async def test_risk_score_to_level(self, engine):
         """Test risk score to level conversion"""
         assert engine._risk_score_to_level(80) == RiskLevel.CRITICAL
         assert engine._risk_score_to_level(60) == RiskLevel.HIGH
@@ -243,7 +248,8 @@ class TestComplianceEngine:
         assert engine._risk_score_to_level(10) == RiskLevel.LOW
         assert engine._risk_score_to_level(0) == RiskLevel.LOW
     
-    def test_generate_mitigation_measures(self, engine):
+    @pytest.mark.asyncio
+    async def test_generate_mitigation_measures(self, engine):
         """Test mitigation measures generation"""
         activities = [
             DataProcessingActivity(

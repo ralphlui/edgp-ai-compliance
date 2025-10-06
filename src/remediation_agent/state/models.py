@@ -190,7 +190,7 @@ class WorkflowStep(BaseModel):
     """Model for individual workflow steps"""
     id: str = Field(..., description="Unique step identifier")
     name: str = Field(..., description="Step name")
-    description: str = Field(..., description="Step description")
+    description: str = Field("", description="Step description")
     action_type: str = Field(..., description="Type of action (api_call, data_update, notification)")
     parameters: Dict[str, Any] = Field(default_factory=dict, description="Step parameters")
     status: WorkflowStatus = Field(default=WorkflowStatus.PENDING, description="Step status")
@@ -208,11 +208,24 @@ class WorkflowStep(BaseModel):
     created_at: datetime = Field(default_factory=utc_now, description="Step creation timestamp")
     order: int = Field(default=0, ge=0, description="Step execution order")
 
+    @property
+    def action(self) -> str:
+        """Alias for action_type for backward compatibility.
+        
+        Returns:
+            str: The action type of this workflow step
+        """
+        return self.action_type
+
     @model_validator(mode="before")
     @classmethod
     def _normalise_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if not isinstance(values, dict):
             return values
+
+        # Support 'action' as an alias for 'action_type'
+        if "action" in values and "action_type" not in values:
+            values["action_type"] = values.pop("action")
 
         if "expected_duration" in values and values["expected_duration"] is not None:
             values.setdefault("estimated_duration_minutes", values["expected_duration"])
@@ -224,14 +237,10 @@ class WorkflowStep(BaseModel):
 
     @model_validator(mode="after")
     def _sync_expected_duration(self) -> "WorkflowStep":
+        if not self.description:
+            self.description = self.name
         self.expected_duration = self.estimated_duration_minutes
         return self
-
-    # Compatibility field for tests
-    @property
-    def action(self) -> str:
-        """Compatibility property that returns action_type"""
-        return self.action_type
 
 
 class RemediationWorkflow(BaseModel):

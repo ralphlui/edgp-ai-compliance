@@ -4,7 +4,7 @@ Integration tests for remediation API endpoints
 
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime
 
@@ -18,7 +18,7 @@ class TestRemediationAPIIntegration:
     @pytest_asyncio.fixture
     async def client(self):
         """Create async test client"""
-        async with AsyncClient(app=app, base_url="http://test") as ac:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
             yield ac
 
     async def test_health_check(self, client):
@@ -157,7 +157,7 @@ class TestAPIErrorHandling:
     @pytest_asyncio.fixture
     async def client(self):
         """Create async test client"""
-        async with AsyncClient(app=app, base_url="http://test") as ac:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
             yield ac
 
     async def test_invalid_endpoint_404(self, client):
@@ -178,7 +178,7 @@ class TestAPICORS:
     @pytest_asyncio.fixture
     async def client(self):
         """Create async test client"""
-        async with AsyncClient(app=app, base_url="http://test") as ac:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
             yield ac
 
     async def test_cors_headers(self, client):
