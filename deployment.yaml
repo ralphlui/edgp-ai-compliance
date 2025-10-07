@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edgp-app-compliance
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: edgp-app-compliance
+  template:
+    metadata:
+      labels:
+        app: edgp-app-compliance
+    spec:
+      containers:
+        - name: edgp-app-compliance
+          image: public.ecr.aws/q1b5w5y6/edgp-app-compliance:VERSION
+          imagePullPolicy: Always
+          env:
+            - name: APP_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: SPRING_PROFILES_ACTIVE
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: AWS_REGION
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: aws_edgp_access_key_id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: aws_edgp_secret_key_id
+            - name: SQS_MAIN_QUEUE_URL 
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: WORKFLOW_DATA_REMEDIATION_SQS_URL
+          resources:
+           requests:
+             cpu: "50m"
+             memory: "250Mi"
+           limits:
+             cpu: "350m"
+             memory: "500Mi"
