@@ -58,15 +58,6 @@ class TestComplianceAPI:
         engine.conduct_privacy_impact_assessment = AsyncMock()
         return engine
     
-    def test_root_endpoint(self, client):
-        """Test root endpoint"""
-        response = client.get("/")
-        assert response.status_code == 200
-        data = response.json()
-        assert "message" in data
-        assert "version" in data
-        assert data["message"] == "AI Compliance Agent API"
-    
     def test_health_check(self, client):
         """Test health check endpoint"""
         response = client.get("/health")

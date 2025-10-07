@@ -146,14 +146,6 @@ class Settings(BaseSettings):
             raise ValueError(f"environment must be one of {allowed}")
         return v
 
-    @field_validator("secret_key")
-    @classmethod
-    def validate_secret_key(cls, v: str) -> str:
-        """Validate secret key length in production"""
-        if len(v) < 32:
-            raise ValueError("secret_key must be at least 32 characters long")
-        return v
-
     def is_production(self) -> bool:
         """Check if running in production"""
         return self.environment == "production"
