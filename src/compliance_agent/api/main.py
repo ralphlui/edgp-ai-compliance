@@ -11,10 +11,12 @@ import signal
 import sys
 from typing import List, Optional
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
 
 from .routers import compliance_router, privacy_router, governance_router, remediation_router
 from . import health, metrics
 from ..core.compliance_engine import ComplianceEngine
+from ..international_ai_agent import InternationalAIComplianceAgent
 from ..utils.logger import get_logger
 from config.settings import settings
 
@@ -22,6 +24,8 @@ logger = get_logger(__name__)
 
 # Global compliance engine instance
 compliance_engine = None
+background_compliance_agent = None
+background_task = None
 _shutdown_event = asyncio.Event()
 
 
@@ -40,7 +44,7 @@ def setup_signal_handlers():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager with graceful shutdown"""
-    global compliance_engine
+    global compliance_engine, background_compliance_agent, background_task
 
     logger.info("🚀 Starting AI Compliance Agent API")
     logger.info(f"Environment: {settings.environment}")
@@ -58,6 +62,96 @@ async def lifespan(app: FastAPI):
         logger.error(f"❌ Failed to initialize compliance engine: {e}")
         raise
 
+    # Initialize and start automatic background compliance scanning
+    try:
+        background_compliance_agent = InternationalAIComplianceAgent()
+        await background_compliance_agent.initialize()
+        
+        # Start background compliance scanning every 5 minutes
+        async def run_periodic_compliance():
+            """Background task to run compliance scanning every 5 minutes"""
+            scan_count = 0
+            while True:
+                try:
+                    scan_count += 1
+                    start_time = datetime.now()
+                    
+                    # START log as requested by user
+                    print(f"INFO: Compliance Schedule jobs is running at 5mins - START - {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                    
+                    # Scan the records on Database retrieved
+                    print("INFO: ---scan the records on Database retrieved")
+                    violations = await background_compliance_agent.scan_customer_compliance()
+                    
+                    # Check the compliance
+                    print("INFO: ---check the compliance")
+                    
+                    # Found violation and logs what and how are violate
+                    if violations:
+                        print("INFO: ---found violation")
+                        print("INFO: ---logs what and how are violate")
+                        
+                        for violation in violations:
+                            print(f"INFO: VIOLATION: Customer {violation.customer_hash} violates {violation.framework} - {violation.violation_type} (Severity: {violation.severity})")
+                            print(f"INFO:   Description: {violation.description}")
+                            print(f"INFO:   Data age: {violation.data_age_days} days (exceeds limit by {violation.data_age_days - violation.retention_limit_days} days)")
+                            
+                            # Call remediation_agent endpoint to pass the violated data
+                            print("INFO: ---Call remediation_agent endpoint to pass the violated data")
+                            
+                            # Prepare remediation data
+                            remediation_data = {
+                                'customer_hash': violation.customer_hash,
+                                'description': violation.description,
+                                'framework': violation.framework.lower(),
+                                'severity': violation.severity,
+                                'action': 'delete',
+                                'field_name': 'customer_data',
+                                'domain_name': 'customer'
+                            }
+                            
+                            # Call remediation service
+                            try:
+                                if hasattr(background_compliance_agent, 'remediation_service') and background_compliance_agent.remediation_service:
+                                    success = await background_compliance_agent.remediation_service.trigger_remediation(remediation_data)
+                                    if success:
+                                        print(f"INFO: ✅ Remediation triggered successfully for customer {violation.customer_hash}")
+                                    else:
+                                        print(f"INFO: ❌ Remediation failed for customer {violation.customer_hash}")
+                                else:
+                                    print("INFO: ⚠️ Remediation service not available")
+                            except Exception as e:
+                                print(f"INFO: ❌ Error calling remediation endpoint: {e}")
+                    else:
+                        print("INFO: ✅ No compliance violations found")
+                    
+                    end_time = datetime.now()
+                    
+                    # END log as requested by user
+                    print(f"INFO: Compliance Schedule jobs is running at 5mins - END - {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                    
+                    # Wait for 5 minutes (300 seconds)
+                    await asyncio.sleep(300)
+                    
+                except asyncio.CancelledError:
+                    logger.info("🛑 Periodic compliance scanning cancelled")
+                    break
+                except Exception as e:
+                    logger.error(f"❌ Error in periodic compliance scan: {e}")
+                    logger.error(f"🔄 Retrying in 1 minute...")
+                    # Wait 1 minute before retrying on error
+                    await asyncio.sleep(60)
+        
+        background_task = asyncio.create_task(run_periodic_compliance())
+        logger.info("✅ Background compliance scanning started (every 5 minutes)")
+        logger.info("🔔 Enhanced logging enabled - you'll see detailed scan reports every 5 minutes")
+        logger.info("📅 Watch for 'AUTOMATIC COMPLIANCE SCAN #X' messages in the logs")
+    except Exception as e:
+        logger.error(f"⚠️ Failed to start background compliance scanning: {e}")
+        logger.info("API will continue without automatic scanning")
+        background_compliance_agent = None
+        background_task = None
+
     yield
 
     # Graceful shutdown
@@ -65,6 +159,18 @@ async def lifespan(app: FastAPI):
 
     # Cleanup tasks
     cleanup_tasks = []
+
+    # Stop background compliance scanning
+    if background_task:
+        try:
+            background_task.cancel()
+            try:
+                await background_task
+            except asyncio.CancelledError:
+                pass
+            logger.info("✅ Background compliance scanning stopped")
+        except Exception as e:
+            logger.error(f"❌ Error stopping background scanning: {e}")
 
     # Close compliance engine
     if compliance_engine:

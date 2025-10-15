@@ -17,6 +17,21 @@ from .compliance_models import (
     DataBreachIncident,
 )
 
+# from .edgp_models import (
+#     Customer,
+#     Location,
+#     Vendor,
+#     Product,
+#     CustomerData,
+#     LocationData,
+#     VendorData,
+#     ProductData,
+#     ComplianceViolationRecord,
+#     DataRetentionAnalysis,
+#     DataRetentionStatus,
+#     ComplianceCategory
+# )
+
 __all__ = [
     "ComplianceFramework",
     "DataType", 
@@ -30,4 +45,16 @@ __all__ = [
     "PrivacyImpactAssessment",
     "ConsentRecord",
     "DataBreachIncident",
+    # "Customer",
+    # "Location", 
+    # "Vendor",
+    # "Product",
+    # "CustomerData",
+    # "LocationData",
+    # "VendorData", 
+    # "ProductData",
+    # "ComplianceViolationRecord",
+    # "DataRetentionAnalysis",
+    # "DataRetentionStatus",
+    # "ComplianceCategory"
 ]

@@ -71,6 +71,11 @@ def print_startup_info():
         print("   ⚠️  Remediation Agent: Disabled")
 
     print()
+    print("🔄 Background Processing:")
+    print("   ✅ Automatic Compliance Scanning: Every 5 minutes")
+    print("   🔍 Frameworks: PDPA (Singapore) + GDPR (EU)")
+    print("   📊 Look for 'AUTOMATIC COMPLIANCE SCAN #X' in logs")
+    print()
 
 
 def print_endpoints():

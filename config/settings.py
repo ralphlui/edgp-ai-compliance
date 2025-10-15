@@ -35,6 +35,14 @@ class Settings(BaseSettings):
     database_pool_timeout: int = Field(default=30, ge=1)
     database_pool_recycle: int = Field(default=3600, ge=300)
 
+    # EDGP Master Data Database Configuration
+    edgp_db_host: str = Field(default="localhost", description="EDGP database host")
+    edgp_db_port: int = Field(default=3306, ge=1, le=65535, description="EDGP database port")
+    edgp_db_username: str = Field(default="root", description="EDGP database username")
+    edgp_db_password: str = Field(default="password", description="EDGP database password")
+    edgp_db_name: str = Field(default="edgp_masterdata", description="EDGP database name")
+    local_db_url: Optional[str] = Field(default=None, description="Local database URL override")
+
     # Redis Cache
     redis_url: str = Field(default="redis://localhost:6379/0", description="Redis connection URL")
     cache_ttl: int = Field(default=3600, ge=60, description="Cache TTL in seconds")
