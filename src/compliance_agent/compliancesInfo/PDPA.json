@@ -1,0 +1,72 @@
+[
+  {
+    "id": "PDPA-Section-1",
+    "title": "Section 1 – Short title and commencement",
+    "content": "This Act may be cited as the Personal Data Protection Act 2012. It applies to all organizations in Singapore unless otherwise exempted.",
+    "category": "General Provisions",
+    "applies_to": ["Organization", "Individual"]
+  },
+  {
+    "id": "PDPA-Section-2",
+    "title": "Section 2 – Interpretation",
+    "content": "Defines terms such as 'personal data', 'business contact information', 'data intermediary', 'organization', and 'processing'. Personal data refers to data about an individual who can be identified from that data alone or with other information that the organization has or is likely to have.",
+    "category": "Definitions",
+    "applies_to": ["Organization", "Data Intermediary"]
+  },
+  {
+    "id": "PDPA-Section-3",
+    "title": "Section 3 – Purpose of Act",
+    "content": "The purpose of this Act is to govern the collection, use, and disclosure of personal data by organizations in a manner that recognizes both the right of individuals to protect their personal data and the need of organizations to collect, use, or disclose personal data for legitimate and reasonable purposes.",
+    "category": "General Provisions",
+    "applies_to": ["Organization"]
+  },
+  {
+    "id": "PDPA-Section-4",
+    "title": "Section 4 – Application of Act",
+    "content": "This Act applies to all organizations, excluding: (a) individuals acting in a personal or domestic capacity; (b) employees acting in the course of employment; (c) public agencies; (d) organizations acting on behalf of public agencies. It also excludes business contact information.",
+    "category": "General Provisions",
+    "applies_to": ["Organization"]
+  },
+  {
+    "id": "PDPA-Section-5",
+    "title": "Section 5 – Consent required",
+    "content": "An organization may collect, use, or disclose personal data about an individual only with the individual's consent, unless an exception applies. Consent must be informed and voluntary.",
+    "category": "Consent",
+    "applies_to": ["Organization"]
+  },
+  {
+    "id": "PDPA-Section-6",
+    "title": "Section 6 – Purpose limitation",
+    "content": "An organization may collect, use, or disclose personal data about an individual only for purposes that a reasonable person would consider appropriate in the circumstances and that the individual has been informed of, unless an exception applies.",
+    "category": "Principles",
+    "applies_to": ["Organization"]
+  },
+  {
+    "id": "PDPA-Section-7",
+    "title": "Section 7 – Notification obligation",
+    "content": "An organization must inform the individual of the purposes for the collection, use, or disclosure of personal data on or before such collection, use, or disclosure.",
+    "category": "Principles",
+    "applies_to": ["Organization"]
+  },
+  {
+    "id": "PDPA-Section-8",
+    "title": "Section 8 – Access to personal data",
+    "content": "An individual has the right to request access to their personal data and to information about how it has been used or disclosed by the organization within a year before the request.",
+    "category": "Individual Rights",
+    "applies_to": ["Organization", "Individual"]
+  },
+  {
+    "id": "PDPA-Section-9",
+    "title": "Section 9 – Correction of personal data",
+    "content": "An individual may request correction of personal data held by an organization. The organization must correct the data unless it is satisfied on reasonable grounds that the correction should not be made.",
+    "category": "Individual Rights",
+    "applies_to": ["Organization", "Individual"]
+  },
+  {
+    "id": "PDPA-Section-10",
+    "title": "Section 10 – Care of personal data",
+    "content": "An organization must make reasonable security arrangements to protect personal data in its possession or control to prevent unauthorized access, collection, use, disclosure, copying, modification, disposal, or similar risks.",
+    "category": "Data Protection",
+    "applies_to": ["Organization"]
+  }
+]
