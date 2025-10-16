@@ -282,6 +282,22 @@ class CleanEDGPComplianceAgent:
                 "timestamp": datetime.now().isoformat()
             }
             
+            # Enhanced logging for debugging - print the complete remediation request (controlled by configuration)
+            if self._should_log_detailed_requests():
+                logger.info("=" * 80)
+                logger.info("🏢 CLEAN EDGP COMPLIANCE REMEDIATION REQUEST")
+                logger.info("=" * 80)
+                logger.info(f"🆔 Violation ID: {remediation_request['violation_id']}")
+                logger.info(f"👤 Customer ID: {remediation_request['customer_id']}")
+                logger.info(f"⚠️  Violation Type: {remediation_request['violation_type']}")
+                logger.info(f"🚨 Severity: {remediation_request['severity']}")
+                logger.info(f"📝 Description: {remediation_request['description']}")
+                logger.info(f"🔧 Recommended Action: {remediation_request['recommended_action']}")
+                logger.info(f"📅 Data Age: {remediation_request['data_age_days']} days")
+                logger.info(f"⏰ Retention Limit: {remediation_request['retention_limit_days']} days")
+                logger.info(f"🕐 Timestamp: {remediation_request['timestamp']}")
+                logger.info("=" * 80)
+            
             success = await self.remediation_service.trigger_remediation(remediation_request)
             
             if success:
@@ -295,6 +311,11 @@ class CleanEDGPComplianceAgent:
             logger.error(f"❌ Remediation trigger failed: {str(e)}")
             return False
     
+    def _should_log_detailed_requests(self) -> bool:
+        """Helper method to check if detailed request logging is enabled."""
+        from config.settings import settings
+        return getattr(settings, 'enable_detailed_request_logging', False)
+
     async def run_periodic_scan(self, interval_hours: float = 5/60) -> None:
         """
         Run compliance scanning periodically.

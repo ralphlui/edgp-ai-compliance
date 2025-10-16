@@ -187,7 +187,9 @@ class TestInternationalAIComplianceBasic:
         
         # Create test violation
         violation = InternationalComplianceViolation(
+            customer_id=12345,
             customer_hash="abc12345",
+            workflow_tracker_id="test_tracker_001",
             violation_type="DATA_RETENTION_EXCEEDED",
             framework="PDPA",
             severity="HIGH",
@@ -259,7 +261,9 @@ class TestInternationalAIComplianceBasic:
             # Mock the compliance analysis
             with patch.object(agent, '_analyze_international_compliance') as mock_analyze:
                 mock_violation = InternationalComplianceViolation(
+                    customer_id=1,
                     customer_hash="test123",
+                    workflow_tracker_id="test_tracker_workflow_001",
                     violation_type="DATA_RETENTION_EXCEEDED",
                     framework="PDPA",
                     severity="HIGH",

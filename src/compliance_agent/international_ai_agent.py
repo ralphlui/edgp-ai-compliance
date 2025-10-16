@@ -38,6 +38,16 @@ load_dotenv('.env.development')
 # Configure structured logging with PII protection
 def mask_pii_processor(logger, method_name, event_dict):
     """Processor to mask PII data in logs."""
+    # Import settings to check if PII masking is enabled
+    try:
+        from config.settings import settings
+        if not settings.enable_pii_masking:
+            # PII masking disabled - return unchanged for development
+            return event_dict
+    except ImportError:
+        # Fallback to masking if settings unavailable
+        pass
+    
     event_dict = event_dict.copy()
     
     # Mask common PII fields
@@ -83,7 +93,9 @@ logger = structlog.get_logger(__name__)
 @dataclass
 class InternationalComplianceViolation:
     """Enhanced compliance violation with international framework support."""
+    customer_id: int  # Actual customer ID from database
     customer_hash: str  # Masked customer ID for PII protection
+    workflow_tracker_id: str  # Workflow tracker ID from database
     violation_type: str
     framework: str  # PDPA, GDPR
     severity: str  # HIGH, MEDIUM, LOW
@@ -148,6 +160,24 @@ class InternationalAIComplianceAgent:
             'PDPA': [],
             'GDPR': []
         }
+    
+    def _should_mask_pii(self) -> bool:
+        """Check if PII masking should be enabled based on configuration."""
+        try:
+            from config.settings import settings
+            return settings.enable_pii_masking
+        except ImportError:
+            # Default to masking if settings unavailable
+            return True
+    
+    def _should_log_detailed_requests(self) -> bool:
+        """Check if detailed request logging should be enabled based on configuration."""
+        try:
+            from config.settings import settings
+            return settings.enable_detailed_request_logging
+        except ImportError:
+            # Default to no detailed logging if settings unavailable
+            return False
     
     async def load_compliance_patterns(self) -> bool:
         """Load compliance patterns from PDPA.json and GDPR.json files."""
@@ -308,7 +338,9 @@ class InternationalAIComplianceAgent:
                 customer_hash = hashlib.md5(str(customer.id).encode()).hexdigest()[:8]
                 
                 violation = InternationalComplianceViolation(
+                    customer_id=customer.id,  # Actual database ID
                     customer_hash=customer_hash,
+                    workflow_tracker_id=customer.workflow_tracker_id,  # Workflow tracker from database
                     violation_type='DATA_RETENTION_EXCEEDED',
                     framework=analysis_result['framework'],
                     severity=analysis_result['severity'],
@@ -329,7 +361,8 @@ class InternationalAIComplianceAgent:
                 )
                 
                 logger.warning("International compliance violation detected",
-                             customer_hash=customer_hash,
+                             customer_id=customer.id if not self._should_mask_pii() else None,
+                             customer_hash=customer_hash if self._should_mask_pii() else None,
                              framework=violation.framework,
                              severity=violation.severity,
                              excess_days=data_age - retention_limit,
@@ -664,6 +697,26 @@ Provide a concise compliance violation description in 1-2 sentences.
                 "matching_patterns_count": len(violation.matching_patterns),
                 "timestamp": datetime.now().isoformat()
             }
+            
+            # Enhanced logging for debugging - print the complete remediation request (controlled by configuration)
+            if self._should_log_detailed_requests():
+                logger.info("=" * 80)
+                logger.info("🌍 INTERNATIONAL COMPLIANCE REMEDIATION REQUEST")
+                logger.info("=" * 80)
+                logger.info(f"🆔 Violation ID: {remediation_request['violation_id']}")
+                logger.info(f"👤 Customer Hash: {remediation_request['customer_hash']}")
+                logger.info(f"⚠️  Violation Type: {remediation_request['violation_type']}")
+                logger.info(f"⚖️  Framework: {remediation_request['framework']}")
+                logger.info(f"🌍 Region: {remediation_request['region']}")
+                logger.info(f"🚨 Severity: {remediation_request['severity']}")
+                logger.info(f"📝 Description: {remediation_request['description']}")
+                logger.info(f"🔧 Recommended Action: {remediation_request['recommended_action']}")
+                logger.info(f"📅 Data Age: {remediation_request['data_age_days']} days")
+                logger.info(f"⏰ Retention Limit: {remediation_request['retention_limit_days']} days")
+                logger.info(f"🎯 Confidence Score: {remediation_request['confidence_score']}")
+                logger.info(f"📊 Matching Patterns: {remediation_request['matching_patterns_count']}")
+                logger.info(f"🕐 Timestamp: {remediation_request['timestamp']}")
+                logger.info("=" * 80)
             
             success = await self.remediation_service.trigger_remediation(remediation_request)
             
