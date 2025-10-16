@@ -8,6 +8,7 @@ This service converts compliance violations into API calls to the remediation ag
 import logging
 import os
 import asyncio
+import httpx
 from datetime import datetime
 from typing import Dict, Any
 from pydantic import BaseModel, Field
@@ -63,52 +64,103 @@ class ComplianceRemediationService:
     
     async def trigger_remediation(self, remediation_data: Dict[str, Any]) -> bool:
         """
-        Trigger remediation for a single violation
+        Trigger remediation by calling the remediation agent API endpoint
         
         Args:
-            remediation_data: Dictionary containing remediation request data
-                Expected keys:
-                - customer_hash: Customer identifier (masked)
-                - action: Action to take (default: 'delete')
-                - description: Description of the violation
-                - field_name: Field being remediated (default: 'customer_data')
-                - domain_name: Domain name (default: 'customer')
-                - framework: Compliance framework (default: 'pdpa_singapore')
-                - severity: Severity level (default: 'HIGH')
+            remediation_data: Dictionary containing remediation request data in the exact format:
+            {
+                "id": "customer_record_id",
+                "action": "delete", 
+                "message": "Customer requested data deletion under GDPR Article 17",
+                "field_name": "customer_profile",
+                "domain_name": "customer",
+                "framework": "gdpr_eu",
+                "urgency": "high",
+                "user_id": "customer_123"
+            }
         
         Returns:
             True if successful, False otherwise
         """
         try:
-            # Create a simple remediation request
-            request = RemediationRequest(
-                id=f"remediation_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{remediation_data.get('customer_hash', 'unknown')}",
-                action=remediation_data.get('action', 'delete'),
-                message=remediation_data.get('description', 'Automated compliance remediation'),
-                field_name=remediation_data.get('field_name', 'customer_data'),
-                domain_name=remediation_data.get('domain_name', 'customer'),
-                framework=remediation_data.get('framework', 'pdpa_singapore'),
-                urgency=self.risk_to_urgency.get(remediation_data.get('severity', 'HIGH'), 'high'),
-                user_id=remediation_data.get('customer_hash', 'unknown')
-            )
+            # Use the exact format provided by the user
+            remediation_payload = {
+                "id": remediation_data.get("id", f"customer_{datetime.now().strftime('%Y%m%d_%H%M%S')}"),
+                "action": remediation_data.get("action", "delete"),
+                "message": remediation_data.get("message", "Customer data retention compliance violation"),
+                "field_name": remediation_data.get("field_name", "customer_profile"),
+                "domain_name": remediation_data.get("domain_name", "customer"),
+                "framework": remediation_data.get("framework", "gdpr_eu"),
+                "urgency": remediation_data.get("urgency", "high"),
+                "user_id": remediation_data.get("user_id", "unknown")
+            }
             
-            # For now, just log the remediation trigger (simulating the call)
-            logger.info(f"🔧 Triggering remediation: {request.action} for {request.user_id} ({request.framework})")
-            logger.info(f"📋 Remediation details: {request.message}")
+            logger.info(f"🔧 Triggering remediation API call to: http://localhost:8000/api/v1/remediation/trigger")
+            logger.info(f"📤 Payload: {remediation_payload}")
             
-            # In a real implementation, you would make an HTTP call here:
-            # async with httpx.AsyncClient() as client:
-            #     response = await client.post(
-            #         f"{self.remediation_endpoint}/api/v1/remediation/trigger",
-            #         json=request.model_dump(),
-            #         timeout=self.timeout
-            #     )
-            #     return response.status_code == 200
+            # Enhanced logging for debugging - print the complete request record (controlled by configuration)
+            try:
+                from config.settings import settings
+                if settings.enable_detailed_request_logging:
+                    logger.info("=" * 80)
+                    logger.info("📋 COMPLETE REMEDIATION REQUEST RECORD")
+                    logger.info("=" * 80)
+                    logger.info(f"🆔 Request ID: {remediation_payload['id']}")
+                    logger.info(f"⚡ Action: {remediation_payload['action']}")
+                    logger.info(f"📝 Message: {remediation_payload['message']}")
+                    logger.info(f"🏷️  Field Name: {remediation_payload['field_name']}")
+                    logger.info(f"🏢 Domain Name: {remediation_payload['domain_name']}")
+                    logger.info(f"⚖️  Framework: {remediation_payload['framework']}")
+                    logger.info(f"🚨 Urgency: {remediation_payload['urgency']}")
+                    logger.info(f"👤 User ID: {remediation_payload['user_id']}")
+                    logger.info("📦 Raw Input Data:")
+                    for key, value in remediation_data.items():
+                        logger.info(f"   {key}: {value}")
+                    logger.info("=" * 80)
+            except ImportError:
+                # Fallback - always show detailed logging if settings unavailable
+                logger.info("=" * 80)
+                logger.info("📋 COMPLETE REMEDIATION REQUEST RECORD")
+                logger.info("=" * 80)
+                logger.info(f"🆔 Request ID: {remediation_payload['id']}")
+                logger.info(f"⚡ Action: {remediation_payload['action']}")
+                logger.info(f"📝 Message: {remediation_payload['message']}")
+                logger.info(f"🏷️  Field Name: {remediation_payload['field_name']}")
+                logger.info(f"🏢 Domain Name: {remediation_payload['domain_name']}")
+                logger.info(f"⚖️  Framework: {remediation_payload['framework']}")
+                logger.info(f"🚨 Urgency: {remediation_payload['urgency']}")
+                logger.info(f"👤 User ID: {remediation_payload['user_id']}")
+                logger.info("📦 Raw Input Data:")
+                for key, value in remediation_data.items():
+                    logger.info(f"   {key}: {value}")
+                logger.info("=" * 80)
             
-            # For now, always return True to simulate successful remediation
-            await asyncio.sleep(0.1)  # Simulate some processing time
-            return True
+            # Make the actual HTTP call to the remediation endpoint
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "http://localhost:8000/api/v1/remediation/trigger",
+                    json=remediation_payload,
+                    timeout=self.timeout
+                )
+                
+                if response.status_code == 200:
+                    logger.info(f"✅ Remediation API call successful: {response.status_code}")
+                    logger.info(f"📨 Data sent to dev-remediation-workflow-dlq queue")
+                    return True
+                elif response.status_code == 202:
+                    logger.info(f"✅ Remediation request accepted: {response.status_code}")
+                    logger.info(f"📨 Data queued for processing - will be sent to dev-remediation-workflow-dlq")
+                    return True
+                else:
+                    logger.error(f"❌ Remediation API call failed: {response.status_code} - {response.text}")
+                    return False
             
+        except httpx.TimeoutException:
+            logger.error("⏰ Remediation API call timed out")
+            return False
+        except httpx.ConnectError:
+            logger.error("🔌 Cannot connect to remediation API - is it running on localhost:8000?")
+            return False
         except Exception as e:
-            logger.error(f"Failed to trigger remediation: {str(e)}")
+            logger.error(f"❌ Failed to trigger remediation: {str(e)}")
             return False

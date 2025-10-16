@@ -88,40 +88,74 @@ async def lifespan(app: FastAPI):
                     
                     # Found violation and logs what and how are violate
                     if violations:
-                        print("INFO: ---found violation")
+                        total_violations = len(violations)
+                        print(f"INFO: ⚠️  COMPLIANCE VIOLATIONS DETECTED: {total_violations} records found")
+                        print(f"INFO: ---found violation - {total_violations} records")
                         print("INFO: ---logs what and how are violate")
                         
-                        for violation in violations:
-                            print(f"INFO: VIOLATION: Customer {violation.customer_hash} violates {violation.framework} - {violation.violation_type} (Severity: {violation.severity})")
+                        for i, violation in enumerate(violations, 1):
+                            print(f"INFO: VIOLATION #{i}/{total_violations}: Customer ID {violation.customer_id} (Hash: {violation.customer_hash}) violates {violation.framework} - {violation.violation_type} (Severity: {violation.severity})")
                             print(f"INFO:   Description: {violation.description}")
                             print(f"INFO:   Data age: {violation.data_age_days} days (exceeds limit by {violation.data_age_days - violation.retention_limit_days} days)")
                             
                             # Call remediation_agent endpoint to pass the violated data
                             print("INFO: ---Call remediation_agent endpoint to pass the violated data")
                             
-                            # Prepare remediation data
+                            # Prepare remediation data in the required format
                             remediation_data = {
-                                'customer_hash': violation.customer_hash,
-                                'description': violation.description,
-                                'framework': violation.framework.lower(),
-                                'severity': violation.severity,
-                                'action': 'delete',
-                                'field_name': 'customer_data',
-                                'domain_name': 'customer'
+                                "id": f"customer_{violation.customer_id}",  # Use actual database ID
+                                "action": "delete",
+                                "message": f"Customer data retention exceeded by {violation.data_age_days - violation.retention_limit_days} days under GDPR Article 17",
+                                "field_name": "created_date",  # Actual violated database field
+                                "domain_name": "customer",
+                                "framework": "gdpr_eu",
+                                "urgency": "high" if violation.severity == "HIGH" else "medium",
+                                "user_id": violation.workflow_tracker_id or f"workflow_tracker_{violation.customer_id}"  # Use actual workflow_tracker_id from database
                             }
+                            
+                            print(f"INFO: 📤 Sending remediation data: {remediation_data}")
+                            
+                            # Enhanced logging for debugging - print the complete request record
+                            print("INFO: " + "=" * 80)
+                            print("INFO: 📋 MAIN FLOW - COMPLETE REMEDIATION REQUEST RECORD")
+                            print("INFO: " + "=" * 80)
+                            print(f"INFO: 🆔 Request ID: {remediation_data['id']}")
+                            print(f"INFO: ⚡ Action: {remediation_data['action']}")
+                            print(f"INFO: 📝 Message: {remediation_data['message']}")
+                            print(f"INFO: 🏷️  Field Name: {remediation_data['field_name']}")
+                            print(f"INFO: 🏢 Domain Name: {remediation_data['domain_name']}")
+                            print(f"INFO: ⚖️  Framework: {remediation_data['framework']}")
+                            print(f"INFO: 🚨 Urgency: {remediation_data['urgency']}")
+                            print(f"INFO: 👤 User ID: {remediation_data['user_id']}")
+                            print("INFO: 📊 Violation Details:")
+                            print(f"INFO:   • Customer ID: {violation.customer_id}")
+                            print(f"INFO:   • Customer Hash: {violation.customer_hash}")
+                            print(f"INFO:   • Violation Type: {violation.violation_type}")
+                            print(f"INFO:   • Framework: {violation.framework}")
+                            print(f"INFO:   • Severity: {violation.severity}")
+                            print(f"INFO:   • Data Age: {violation.data_age_days} days")
+                            print(f"INFO:   • Retention Limit: {violation.retention_limit_days} days")
+                            print(f"INFO:   • Excess Days: {violation.data_age_days - violation.retention_limit_days} days")
+                            print(f"INFO:   • Confidence Score: {violation.confidence_score}")
+                            print(f"INFO:   • Region: {violation.region}")
+                            print("INFO: " + "=" * 80)
                             
                             # Call remediation service
                             try:
                                 if hasattr(background_compliance_agent, 'remediation_service') and background_compliance_agent.remediation_service:
                                     success = await background_compliance_agent.remediation_service.trigger_remediation(remediation_data)
                                     if success:
-                                        print(f"INFO: ✅ Remediation triggered successfully for customer {violation.customer_hash}")
+                                        print(f"INFO: ✅ Remediation triggered successfully for customer ID {violation.customer_id}")
+                                        print(f"INFO: 📨 Data should be sent to SQS DLQ: dev-remediation-workflow-dlq")
                                     else:
-                                        print(f"INFO: ❌ Remediation failed for customer {violation.customer_hash}")
+                                        print(f"INFO: ❌ Remediation failed for customer ID {violation.customer_id}")
                                 else:
                                     print("INFO: ⚠️ Remediation service not available")
                             except Exception as e:
                                 print(f"INFO: ❌ Error calling remediation endpoint: {e}")
+                        
+                        # Summary of violations processed
+                        print(f"INFO: 📊 VIOLATION SUMMARY: {total_violations} records processed for remediation")
                     else:
                         print("INFO: ✅ No compliance violations found")
                     

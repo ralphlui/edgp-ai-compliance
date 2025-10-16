@@ -1,5 +1,6 @@
 """
-Simple Database Service for EDGP Master Data Connection
+Enhanced Database Service for EDGP Master Data Connection
+Supports both local MySQL and AWS RDS with Secrets Manager
 Using direct aiomysql without SQLAlchemy for Python 3.13 compatibility
 """
 
@@ -11,6 +12,7 @@ import asyncio
 import aiomysql
 
 from config.settings import settings
+from .aws_rds_service import AWSRDSConfig, RDSConnectionValidator
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +22,8 @@ class CustomerData:
     def __init__(self, id: int, email: str = None, phone: str = None, 
                  firstname: str = None, lastname: str = None,
                  created_date: datetime = None, updated_date: datetime = None,
-                 is_archived: bool = False, domain_name: str = None):
+                 is_archived: bool = False, domain_name: str = None,
+                 workflow_tracker_id: str = None):
         self.id = id
         self.email = email
         self.phone = phone
@@ -30,61 +33,146 @@ class CustomerData:
         self.updated_date = updated_date
         self.is_archived = is_archived
         self.domain_name = domain_name
+        self.workflow_tracker_id = workflow_tracker_id
+        self.created_date = created_date
+        self.updated_date = updated_date
+        self.is_archived = is_archived
+        self.domain_name = domain_name
 
 
 class EDGPDatabaseService:
-    """Simple service for connecting to EDGP master data database"""
+    """Enhanced service for connecting to EDGP master data database with AWS RDS support"""
     
     def __init__(self):
-        self.connection_config = self._build_connection_config()
+        self.connection_config = None
         self.pool = None
+        self.is_aws_rds = False
         
-        logger.info("Initialized EDGP Database Service (Simple)")
+        logger.info("Initialized Enhanced EDGP Database Service")
     
-    def _build_connection_config(self) -> dict:
-        """Build database connection configuration"""
+    async def _build_connection_config(self) -> dict:
+        """Build database connection configuration with auto-detection of AWS RDS vs Local"""
         
-        host = getattr(settings, 'edgp_db_host', 'localhost')
+        # Get basic database configuration
+        host = getattr(settings, 'edgp_db_host', None)
         port = getattr(settings, 'edgp_db_port', 3306)
-        username = getattr(settings, 'edgp_db_username', 'root')
-        password = getattr(settings, 'edgp_db_password', 'password')
-        database = getattr(settings, 'edgp_db_name', 'edgp_masterdata')
+        username = getattr(settings, 'edgp_db_username', None)
+        password = getattr(settings, 'edgp_db_password', None)
+        secret_name = getattr(settings, 'edgp_db_secret_name', None)
+        database = getattr(settings, 'edgp_db_name', None)
         
-        config = {
-            'host': host,
-            'port': port,
-            'user': username,
-            'password': password,
-            'db': database,
-            'charset': 'utf8mb4',
-            'autocommit': True
-        }
+        if not database:
+            raise ValueError("EDGP_DB_NAME is required in environment configuration")
         
-        logger.info(f"Database config: host={host}, database={database}")
+        # Auto-detect if this is AWS RDS or local based on host and secret_name
+        is_aws_rds = False
+        
+        # Check if it's AWS RDS by looking for AWS RDS hostname pattern or secret name
+        if host and ('rds.amazonaws.com' in host or secret_name):
+            is_aws_rds = True
+            self.is_aws_rds = True
+            logger.info("AWS RDS mode detected")
+        else:
+            self.is_aws_rds = False
+            logger.info("Local MySQL mode detected")
+        
+        if is_aws_rds:
+            # AWS RDS Configuration
+            if not host:
+                raise ValueError("EDGP_DB_HOST is required for AWS RDS connection")
+            
+            if secret_name:
+                # Use AWS Secrets Manager
+                logger.info(f"Using AWS Secrets Manager for credentials: {secret_name}")
+                region = getattr(settings, 'aws_region', 'ap-southeast-1')
+                
+                # Get credentials from Secrets Manager
+                config = AWSRDSConfig.build_connection_config(
+                    host=host,
+                    port=port,
+                    database=database,
+                    secret_name=secret_name,
+                    region=region,
+                    use_secrets_manager=True
+                )
+                
+                # Resolve credentials from Secrets Manager
+                config = await AWSRDSConfig.resolve_credentials(config)
+                
+            elif username and password:
+                # Use direct credentials for AWS RDS
+                logger.info("Using direct credentials for AWS RDS connection")
+                config = AWSRDSConfig.build_connection_config(
+                    host=host,
+                    port=port,
+                    database=database,
+                    username=username,
+                    password=password,
+                    use_secrets_manager=False
+                )
+            else:
+                raise ValueError("Either EDGP_DB_SECRET_NAME or EDGP_DB_USERNAME/EDGP_DB_PASSWORD must be provided for AWS RDS")
+            
+            # Validate the configuration
+            RDSConnectionValidator.validate_config(config)
+            
+        else:
+            # Local MySQL Configuration
+            if not host:
+                host = 'localhost'  # Default for local
+            
+            if not username or not password:
+                raise ValueError("EDGP_DB_USERNAME and EDGP_DB_PASSWORD are required for local MySQL")
+            
+            config = {
+                'host': host,
+                'port': port,
+                'user': username,
+                'password': password,
+                'db': database,
+                'charset': 'utf8mb4',
+                'autocommit': True
+            }
+        
+        logger.info(f"Database config built: host={config['host']}, database={config['db']}, aws_rds={self.is_aws_rds}")
         return config
     
     async def initialize(self):
         """Initialize database connection pool"""
         try:
-            # For development, use a mock approach if no real database
-            # This allows the compliance agent to work without a real database
+            # Build connection config (async for AWS RDS Secrets Manager support)
+            self.connection_config = await self._build_connection_config()
+            
+            # Try to establish connection pool
             try:
                 self.pool = await aiomysql.create_pool(
                     minsize=1,
-                    maxsize=5,
+                    maxsize=10 if self.is_aws_rds else 5,  # More connections for AWS RDS
                     **self.connection_config
                 )
                 await self._test_connection()
-                logger.info("EDGP Database Service initialized successfully with real database")
+                
+                connection_type = "AWS RDS" if self.is_aws_rds else "Local MySQL"
+                logger.info(f"EDGP Database Service initialized successfully with {connection_type}")
+                
             except Exception as db_error:
-                logger.warning(f"Could not connect to real database: {db_error}")
-                logger.info("Using mock database mode for compliance agent")
-                self.pool = None  # Use mock mode
+                logger.warning(f"Could not connect to database: {db_error}")
+                if self.is_aws_rds:
+                    # For AWS RDS, this is a critical error
+                    raise db_error
+                else:
+                    # For local development, allow fallback to mock mode
+                    logger.info("Using mock database mode for compliance agent")
+                    self.pool = None
             
         except Exception as e:
             logger.error(f"Failed to initialize database service: {str(e)}")
-            # Don't raise error, allow mock mode
-            self.pool = None
+            if self.is_aws_rds:
+                # Don't allow mock mode for AWS RDS
+                raise e
+            else:
+                # Allow mock mode for local development
+                self.pool = None
     
     async def _test_connection(self):
         """Test database connection"""
@@ -108,7 +196,7 @@ class EDGPDatabaseService:
                     async with conn.cursor() as cursor:
                         query = """
                         SELECT id, email, phone, firstname, lastname, 
-                               created_date, updated_date, is_archived, domain_name
+                               created_date, updated_date, is_archived, domain_name, workflow_tracker_id
                         FROM customer 
                         ORDER BY created_date DESC
                         """
@@ -126,7 +214,8 @@ class EDGPDatabaseService:
                                 created_date=row[5],
                                 updated_date=row[6],
                                 is_archived=bool(row[7]) if row[7] is not None else False,
-                                domain_name=row[8]
+                                domain_name=row[8],
+                                workflow_tracker_id=row[9]
                             )
                             customers.append(customer)
                         
@@ -155,7 +244,8 @@ class EDGPDatabaseService:
                 created_date=datetime.now() - timedelta(days=8*365),  # 8 years old
                 updated_date=datetime.now() - timedelta(days=4*365),  # Last activity 4 years ago
                 is_archived=False,
-                domain_name="example.com"
+                domain_name="example.com",
+                workflow_tracker_id="WF_TRACK_001"
             ),
             # Recent customer data that should be compliant
             CustomerData(
@@ -167,7 +257,8 @@ class EDGPDatabaseService:
                 created_date=datetime.now() - timedelta(days=30),  # 30 days old
                 updated_date=datetime.now() - timedelta(days=1),   # Recent activity
                 is_archived=False,
-                domain_name="example.com"
+                domain_name="example.com",
+                workflow_tracker_id="WF_TRACK_002"
             ),
             # Inactive customer that exceeds retention limit
             CustomerData(
@@ -179,7 +270,8 @@ class EDGPDatabaseService:
                 created_date=datetime.now() - timedelta(days=5*365),  # 5 years old
                 updated_date=datetime.now() - timedelta(days=4*365),  # No activity for 4 years
                 is_archived=False,
-                domain_name="example.com"
+                domain_name="example.com",
+                workflow_tracker_id="WF_TRACK_003"
             )
         ]
         
