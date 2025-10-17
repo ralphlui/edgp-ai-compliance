@@ -3,9 +3,10 @@ Configuration settings for the AI Compliance Agent
 Production-ready configuration with validation and environment variable support
 """
 
+from typing import Any, Dict, List, Optional
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field, field_validator
-from typing import List, Optional
 import secrets
 
 
@@ -34,6 +35,24 @@ class Settings(BaseSettings):
     database_max_overflow: int = Field(default=20, ge=0, le=100)
     database_pool_timeout: int = Field(default=30, ge=1)
     database_pool_recycle: int = Field(default=3600, ge=300)
+
+    # EDGP Master Data Database Configuration
+    edgp_db_host: str = Field(default="localhost", description="EDGP database host")
+    edgp_db_port: int = Field(default=3306, ge=1, le=65535, description="EDGP database port")
+    edgp_db_username: str = Field(default="root", description="EDGP database username")
+    edgp_db_password: str = Field(default="password", description="EDGP database password")
+    edgp_db_name: str = Field(default="edgp_masterdata", description="EDGP database name")
+    edgp_db_secret_name: Optional[str] = Field(default=None, description="AWS Secrets Manager secret name for DB credentials")
+    local_db_url: Optional[str] = Field(default=None, description="Local database URL override")
+    
+    # AWS RDS Configuration (for production/staging environments) - DEPRECATED, use edgp_db_* instead
+    aws_rds_enabled: bool = Field(default=False, description="Enable AWS RDS connection")
+    aws_rds_host: Optional[str] = Field(default=None, description="AWS RDS endpoint")
+    aws_rds_port: int = Field(default=3306, ge=1, le=65535, description="AWS RDS port")
+    aws_rds_database: str = Field(default="masterdata", description="AWS RDS database name")
+    aws_secrets_manager_enabled: bool = Field(default=False, description="Use AWS Secrets Manager for credentials")
+    aws_secret_name: Optional[str] = Field(default=None, description="AWS Secrets Manager secret name")
+    aws_region: str = Field(default="ap-southeast-1", description="AWS region")
 
     # Redis Cache
     redis_url: str = Field(default="redis://localhost:6379/0", description="Redis connection URL")
@@ -69,6 +88,12 @@ class Settings(BaseSettings):
     enable_ai_analysis: bool = Field(default=True)
     default_frameworks: List[str] = Field(default=["pdpa_singapore", "gdpr_eu"])
     max_assessment_time: int = Field(default=300, ge=30, le=3600)
+    
+    # PII Protection Settings
+    enable_pii_masking: bool = Field(default=True, description="Enable PII masking in logs (disable for development only)")
+    
+    # Debug Logging Settings
+    enable_detailed_request_logging: bool = Field(default=False, description="Enable detailed request logging for debugging")
 
     # Data Retention
     default_retention_days: int = Field(default=2555, ge=1)
@@ -153,6 +178,26 @@ class Settings(BaseSettings):
     def is_development(self) -> bool:
         """Check if running in development"""
         return self.environment == "development"
+
+    def sanitized_copy(self) -> Dict[str, Any]:
+        """
+        Return a sanitised configuration dictionary with sensitive values redacted.
+
+        Keys containing common secret markers (e.g. 'key', 'token', 'password')
+        are masked to avoid leaking credentials in logs.
+        """
+        data = self.model_dump(mode="python")
+        sensitive_markers = ("key", "token", "secret", "password")
+
+        for field, value in data.items():
+            if value is None:
+                continue
+
+            lower_name = field.lower()
+            if any(marker in lower_name for marker in sensitive_markers):
+                data[field] = "***REDACTED***"
+
+        return data
 
     def validate_required_secrets(self) -> List[str]:
         """Validate that required secrets are set"""

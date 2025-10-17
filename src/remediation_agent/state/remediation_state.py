@@ -88,7 +88,8 @@ class RemediationStateManager:
             context={
                 "started_at": datetime.now(timezone.utc),
                 "violation_id": signal.violation.rule_id,
-                "activity_id": signal.violation.activity_id
+                "activity_id": signal.violation.activity_id,
+                "signal_received_at": getattr(signal, "received_at", datetime.now(timezone.utc))
             },
             execution_path=[]
         )

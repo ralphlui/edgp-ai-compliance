@@ -150,6 +150,69 @@ class TestDecisionAgent:
             assert result.estimated_effort == 240
     
     @pytest.mark.asyncio
+    async def test_analyze_violation_normalises_nested_plan(self, decision_agent, sample_remediation_signal):
+        """LLM payload nested under remediation_plan is normalised to expected schema"""
+        mock_choice = MagicMock()
+        mock_choice.message.content = json.dumps({
+            "remediation_plan": {
+                "risk_level": "high",
+                "remediation_actions": [
+                    {"action": "notify_customers"},
+                    {"action": "delete_records"}
+                ],
+                "summary": "High risk scenario requiring careful handling.",
+                "prerequisites": "legal_review"
+            }
+        })
+        
+        mock_response = MagicMock()
+        mock_response.choices = [mock_choice]
+        
+        with patch('src.remediation_agent.agents.decision_agent.openai.AsyncOpenAI') as mock_client:
+            mock_instance = AsyncMock()
+            mock_instance.chat.completions.create.return_value = mock_response
+            mock_client.return_value = mock_instance
+            
+            sample_remediation_signal.violation.risk_level = RiskLevel.HIGH
+            
+            result = await decision_agent.analyze_violation(sample_remediation_signal)
+        
+        assert isinstance(result, RemediationDecision)
+        assert result.remediation_type == RemediationType.MANUAL_ONLY
+        assert 0.5 < result.confidence_score < 0.7
+        assert result.estimated_effort >= 40  # derived from actions length
+        assert result.prerequisites == ["legal_review"]
+        assert result.recommended_actions == ["notify_customers", "delete_records"]
+    
+    @pytest.mark.asyncio
+    async def test_analyze_violation_includes_schema_prompt(self, decision_agent, sample_remediation_signal):
+        """Ensure LLM prompt includes schema instructions"""
+        mock_choice = MagicMock()
+        mock_choice.message.content = json.dumps({
+            "remediation_type": "automatic",
+            "confidence_score": 0.8,
+            "reasoning": "Standard workflow",
+            "estimated_effort": 25,
+            "risk_if_delayed": "low"
+        })
+        
+        mock_response = MagicMock()
+        mock_response.choices = [mock_choice]
+        
+        with patch('src.remediation_agent.agents.decision_agent.openai.AsyncOpenAI') as mock_client:
+            mock_instance = AsyncMock()
+            mock_instance.chat.completions.create.return_value = mock_response
+            mock_client.return_value = mock_instance
+            
+            await decision_agent.analyze_violation(sample_remediation_signal)
+            assert mock_instance.chat.completions.create.called
+            call_kwargs = mock_instance.chat.completions.create.call_args.kwargs
+            messages = call_kwargs["messages"]
+        
+        assert messages[0]["content"] == decision_agent._system_message
+        assert "Incident data:" in messages[1]["content"]
+    
+    @pytest.mark.asyncio
     async def test_analyze_violation_with_fallback_parsing(self, decision_agent, sample_remediation_signal):
         """Test analyzing violation with non-JSON LLM response (fallback parsing)"""
         # Mock OpenAI client response that's not valid JSON

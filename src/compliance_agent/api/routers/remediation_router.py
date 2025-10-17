@@ -20,17 +20,15 @@ from ...models.compliance_models import (
     DataType,
     RiskLevel
 )
+
 try:
-    # Try relative import first
-    from ....remediation_agent.main import RemediationAgent
-    from ....remediation_agent.state.models import RemediationType
-except ImportError:
-    # Fallback to absolute import
+    from remediation_agent.main import RemediationAgent
+    from remediation_agent.state.models import RemediationType
+except ImportError:  # pragma: no cover - fallback for direct script execution
     import sys
     from pathlib import Path
 
-    # Add project root to path
-    project_root = Path(__file__).parent.parent.parent.parent.parent
+    project_root = Path(__file__).resolve().parents[4]
     if str(project_root) not in sys.path:
         sys.path.insert(0, str(project_root))
 
