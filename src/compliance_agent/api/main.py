@@ -3,12 +3,13 @@ FastAPI application for AI Compliance Agent
 Production-ready with health checks, metrics, and graceful shutdown
 """
 
+import asyncio
+import json
+import signal
+import sys
 from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import asyncio
-import signal
-import sys
 from typing import List, Optional
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
@@ -49,6 +50,10 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 Starting AI Compliance Agent API")
     logger.info(f"Environment: {settings.environment}")
     logger.info(f"Version: {settings.app_version}")
+    logger.info(
+        "Configuration snapshot:\n%s",
+        json.dumps(settings.sanitized_copy(), indent=2, sort_keys=True)
+    )
 
     # Setup signal handlers for graceful shutdown
     setup_signal_handlers()

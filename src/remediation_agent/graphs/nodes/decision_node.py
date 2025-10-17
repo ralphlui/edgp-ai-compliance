@@ -6,6 +6,7 @@ based on analysis results and agent recommendations.
 """
 
 import logging
+import json
 from typing import Dict, Any, List
 
 from ...agents.decision_agent import DecisionAgent
@@ -55,22 +56,63 @@ class DecisionNode:
         logger.info(f"🎯 [DECISION-INPUT] Signal for violation: {state['signal'].violation.rule_id}, Risk: {state['signal'].violation.risk_level.value}")
 
         try:
+            # Helper to safely cast floats for logging/comparisons
+            def _safe_float(value: Any, default: float) -> float:
+                try:
+                    if value is None:
+                        return default
+                    return float(value)
+                except (TypeError, ValueError):
+                    return default
+
             # Add to execution path
             logger.info(f"📝 [EXECUTION-PATH] Adding 'decision_started' to execution path")
             state["execution_path"].append("decision_started")
 
             # Get analysis results
             logger.info(f"📊 [ANALYSIS-DATA] Retrieving analysis results for decision making")
-            complexity_assessment = state.get("complexity_assessment", {})
-            feasibility_score = state.get("feasibility_score", 0.0)
+            complexity_assessment = state.get("complexity_assessment") or {}
+            feasibility_score = _safe_float(state.get("feasibility_score"), 0.0)
 
-            overall_complexity = complexity_assessment.get("overall_complexity", 0.5)
-            logger.info(f"📈 [ANALYSIS-SCORES] Complexity: {overall_complexity:.2f}, Feasibility: {feasibility_score:.2f}")
+            overall_complexity = _safe_float(
+                complexity_assessment.get("overall_complexity"),
+                0.5
+            )
+            logger.info(
+                "📈 [ANALYSIS-SCORES] Complexity: %.2f, Feasibility: %.2f",
+                overall_complexity,
+                feasibility_score,
+            )
+
+            signal = state["signal"]
+            prompts = state.setdefault("context", {}).setdefault("node_prompts", {})
+            decision_prompt = {
+                "violation_id": signal.violation.rule_id,
+                "risk_level": signal.violation.risk_level.value,
+                "framework": signal.framework,
+                "urgency": signal.urgency.value,
+                "remediation_actions": signal.violation.remediation_actions,
+                "analysis": {
+                    "overall_complexity": overall_complexity,
+                    "feasibility_score": feasibility_score,
+                    "complexity_factors": complexity_assessment.get("complexity_factors", [])
+                }
+            }
+            logger.info(
+                "🧾 [NODE-PROMPT][decision] %s",
+                json.dumps(decision_prompt, default=str)
+            )
+            prompts["decision"] = decision_prompt
 
             # Make primary decision using AI agent
             logger.info(f"🤖 [AI-DECISION-START] Calling DecisionAgent.analyze_violation for {violation_id}")
             decision = await self.decision_agent.analyze_violation(state["signal"])
-            logger.info(f"🎯 [AI-DECISION-RAW] Type: {decision.remediation_type.value}, Confidence: {decision.confidence_score:.2f}")
+            raw_confidence = _safe_float(decision.confidence_score, 0.0)
+            logger.info(
+                "🎯 [AI-DECISION-RAW] Type: %s, Confidence: %.2f",
+                decision.remediation_type.value,
+                raw_confidence,
+            )
             logger.info(f"💭 [AI-REASONING] {decision.reasoning}")
 
             # Validate and potentially override decision based on analysis
@@ -79,7 +121,11 @@ class DecisionNode:
                 decision, complexity_assessment, feasibility_score, state
             )
             logger.info(f"🔍 [DECISION-VALIDATED] Final type: {validated_decision.remediation_type.value}")
-            logger.info(f"📊 [DECISION-CONFIDENCE] Final confidence: {validated_decision.confidence_score:.2f}")
+            final_confidence = _safe_float(validated_decision.confidence_score, 0.0)
+            logger.info(
+                "📊 [DECISION-CONFIDENCE] Final confidence: %.2f",
+                final_confidence,
+            )
 
             # Update state with decision
             logger.info(f"📝 [STATE-UPDATE] Storing validated decision in state")
@@ -105,8 +151,36 @@ class DecisionNode:
             logger.info(f"📝 [EXECUTION-PATH] Adding 'decision_completed' to execution path")
             state["execution_path"].append("decision_completed")
 
-            logger.info(f"🎉 [DECISION-COMPLETE] Decision made: {validated_decision.remediation_type.value} "
-                       f"(confidence: {validated_decision.confidence_score:.2f})")
+            logger.info(
+                "🎉 [DECISION-COMPLETE] Decision made: %s (confidence: %.2f)",
+                validated_decision.remediation_type.value,
+                final_confidence,
+            )
+            logger.info(
+                "🧾 [REMEDIATION-DECISION] %s",
+                json.dumps(
+                    {
+                        "violation_id": violation_id,
+                        "remediation_type": validated_decision.remediation_type.value,
+                        "confidence_score": final_confidence,
+                        "estimated_effort": validated_decision.estimated_effort,
+                        "risk_if_delayed": validated_decision.risk_if_delayed.value if hasattr(validated_decision.risk_if_delayed, "value") else validated_decision.risk_if_delayed,
+                        "reasoning": validated_decision.reasoning,
+                        "prerequisites": validated_decision.prerequisites,
+                        "recommended_actions": validated_decision.recommended_actions,
+                    },
+                    default=str
+                )
+            )
+            state["context"]["node_prompts"]["decision_result"] = {
+                "remediation_type": validated_decision.remediation_type.value,
+                "confidence_score": final_confidence,
+                "estimated_effort": validated_decision.estimated_effort,
+                "risk_if_delayed": validated_decision.risk_if_delayed.value
+                if hasattr(validated_decision.risk_if_delayed, "value")
+                else validated_decision.risk_if_delayed,
+                "reasoning": validated_decision.reasoning,
+            }
 
             return state
 

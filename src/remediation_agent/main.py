@@ -8,6 +8,7 @@ that processes compliance violations and orchestrates intelligent remediation wo
 import asyncio
 import logging
 import os
+import json
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 import uuid
@@ -21,7 +22,8 @@ from .state.models import (
     RemediationSignal,
     RemediationMetrics,
     RemediationType,
-    WorkflowStatus
+    WorkflowStatus,
+    UrgencyLevel
 )
 from .tools.notification_tool import NotificationTool
 from src.compliance_agent.models.compliance_models import (
@@ -29,6 +31,7 @@ from src.compliance_agent.models.compliance_models import (
     DataProcessingActivity,
     RiskLevel
 )
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +114,12 @@ class RemediationAgent:
 
             success_status = 'Success' if result.get('success') else 'Failed'
             logger.info(f"🎉 [AGENT-PROCESS-COMPLETE] Violation {violation.rule_id} processing complete: {success_status}")
+            decision_summary = result.get("decision_info")
+            if decision_summary:
+                logger.info(
+                    "🧾 [REMEDIATION-DECISION-SUMMARY] %s",
+                    json.dumps(decision_summary, default=str)
+                )
 
             return result
 
@@ -139,11 +148,58 @@ class RemediationAgent:
     ) -> RemediationSignal:
         """Create a remediation signal from the input parameters"""
 
+        # Normalise inputs in case downstream callers provide dictionaries
+        try:
+            if not isinstance(violation, ComplianceViolation):
+                if isinstance(violation, BaseModel):
+                    violation = ComplianceViolation.model_validate(violation.model_dump())
+                else:
+                    violation = ComplianceViolation.model_validate(violation)
+        except Exception as exc:  # pragma: no cover - log and fallback to placeholder
+            logger.warning(
+                "Failed to validate violation payload (%s) – using placeholder violation",
+                exc,
+            )
+            violation = ComplianceViolation(
+                rule_id=f"fallback_{uuid.uuid4().hex[:8]}",
+                description="Fallback violation due to validation error",
+                risk_level=RiskLevel.MEDIUM,
+                remediation_actions=[],
+            )
+
+        try:
+            if not isinstance(activity, DataProcessingActivity):
+                if isinstance(activity, BaseModel):
+                    activity = DataProcessingActivity.model_validate(activity.model_dump())
+                else:
+                    activity = DataProcessingActivity.model_validate(activity)
+        except Exception as exc:  # pragma: no cover - log and fallback to placeholder
+            logger.warning(
+                "Failed to validate activity payload (%s) – using placeholder activity",
+                exc,
+            )
+            activity = DataProcessingActivity(
+                id=f"fallback_activity_{uuid.uuid4().hex[:8]}",
+                name="Fallback Activity",
+                purpose="unspecified",
+                data_types=[],
+            )
+
+        # Determine urgency level
+        if urgency is None and violation is not None:
+            urgency = violation.risk_level
+        urgency_value = getattr(urgency, "value", urgency)
+        try:
+            urgency_level = UrgencyLevel(str(urgency_value).lower())
+        except Exception:
+            urgency_level = UrgencyLevel.MEDIUM
+
         return RemediationSignal(
             violation=violation,
             activity=activity,
             framework=framework,
-            urgency=urgency or violation.risk_level,
+            urgency_level=urgency_level,
+            priority=urgency_level.value,
             context=context or {},
             received_at=datetime.now(timezone.utc)
         )
