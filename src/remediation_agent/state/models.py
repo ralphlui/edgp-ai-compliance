@@ -346,6 +346,10 @@ class RemediationSignal(BaseModel):
     metadata: Dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata"
     )
+    received_at: datetime = Field(
+        default_factory=utc_now,
+        description="Timestamp when the signal was received by the remediation agent"
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -358,6 +362,18 @@ class RemediationSignal(BaseModel):
 
         if "id" not in values or not values["id"]:
             values["id"] = values["signal_id"]
+
+        # Support legacy payloads that provide urgency instead of urgency_level/priority
+        urgency_value = values.pop("urgency", None)
+        if urgency_value is not None:
+            if hasattr(urgency_value, "value"):
+                urgency_value = urgency_value.value
+            urgency_value = str(urgency_value).lower()
+            try:
+                values["urgency_level"] = UrgencyLevel(urgency_value)
+            except ValueError:
+                values["urgency_level"] = UrgencyLevel.MEDIUM
+            values["priority"] = values["urgency_level"].value
 
         violation_obj = values.get("violation")
         if violation_obj and not values.get("violation_id"):
@@ -382,6 +398,20 @@ class RemediationSignal(BaseModel):
     def _ensure_defaults(self) -> "RemediationSignal":
         self.id = self.id or self.signal_id
 
+        if not isinstance(self.urgency_level, UrgencyLevel):
+            try:
+                self.urgency_level = UrgencyLevel(str(self.urgency_level).lower())
+            except ValueError:
+                self.urgency_level = UrgencyLevel.MEDIUM
+
+        # Keep priority string aligned with urgency level
+        if isinstance(self.priority, RiskLevel):
+            self.priority = self.priority.value
+        if isinstance(self.priority, UrgencyLevel):
+            self.priority = self.priority.value
+        if not self.priority:
+            self.priority = self.urgency_level.value
+
         if not self.violation and self.violation_id:
             self.violation = ComplianceViolation(
                 rule_id=self.violation_id,
@@ -399,6 +429,27 @@ class RemediationSignal(BaseModel):
             )
 
         return self
+
+    @property
+    def urgency(self) -> UrgencyLevel:
+        """Convenience accessor used throughout the remediation graph."""
+        try:
+            return UrgencyLevel(self.priority)
+        except (ValueError, TypeError):
+            return self.urgency_level
+
+    @urgency.setter
+    def urgency(self, value) -> None:
+        if value is None:
+            return
+        if hasattr(value, "value"):
+            value = value.value
+        try:
+            urgency = UrgencyLevel(str(value).lower())
+        except ValueError:
+            urgency = UrgencyLevel.MEDIUM
+        self.urgency_level = urgency
+        self.priority = urgency.value
 
 
 class HumanTask(BaseModel):

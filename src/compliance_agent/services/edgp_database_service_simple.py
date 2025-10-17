@@ -97,7 +97,17 @@ class EDGPDatabaseService:
                 )
                 
                 # Resolve credentials from Secrets Manager
-                config = await AWSRDSConfig.resolve_credentials(config)
+                try:
+                    config = await AWSRDSConfig.resolve_credentials(config)
+                except Exception as exc:
+                    logger.warning(
+                        "Unable to load credentials from Secrets Manager (%s). "
+                        "Falling back to mock database mode.",
+                        exc,
+                    )
+                    # Fallback to mock mode
+                    self.is_aws_rds = False
+                    return None
                 
             elif username and password:
                 # Use direct credentials for AWS RDS
@@ -122,7 +132,8 @@ class EDGPDatabaseService:
                 host = 'localhost'  # Default for local
             
             if not username or not password:
-                raise ValueError("EDGP_DB_USERNAME and EDGP_DB_PASSWORD are required for local MySQL")
+                logger.warning("Missing local database credentials – using mock database mode.")
+                return None
             
             config = {
                 'host': host,
@@ -142,6 +153,11 @@ class EDGPDatabaseService:
         try:
             # Build connection config (async for AWS RDS Secrets Manager support)
             self.connection_config = await self._build_connection_config()
+
+            if not self.connection_config:
+                logger.info("Database connection configuration unavailable; using mock data.")
+                self.pool = None
+                return
             
             # Try to establish connection pool
             try:

@@ -7,6 +7,7 @@ the complexity and requirements for remediation.
 
 import logging
 from typing import Dict, Any, List
+import json
 
 from ...agents.validation_agent import ValidationAgent
 from ...state.remediation_state import RemediationState
@@ -39,6 +40,28 @@ class AnalysisNode:
         logger.info(f"📊 [ANALYSIS-INPUT] Signal for violation: {state['signal'].violation.rule_id}, Priority: {state['signal'].urgency.value}")
 
         try:
+            signal = state["signal"]
+            prompts = state.setdefault("context", {}).setdefault("node_prompts", {})
+            analysis_prompt = {
+                "violation_id": signal.violation.rule_id,
+                "risk_level": signal.violation.risk_level.value,
+                "framework": signal.framework,
+                "urgency": signal.urgency.value,
+                "remediation_actions": signal.violation.remediation_actions,
+                "activity": {
+                    "id": signal.activity.id,
+                    "purpose": getattr(signal.activity, "purpose", None),
+                    "data_types": [dt.value for dt in signal.activity.data_types],
+                    "recipients": getattr(signal.activity, "recipients", []),
+                },
+                "context_keys": list((signal.context or {}).keys())
+            }
+            logger.info(
+                "🧾 [NODE-PROMPT][analysis] %s",
+                json.dumps(analysis_prompt, default=str)
+            )
+            prompts["analysis"] = analysis_prompt
+
             # Add to execution path
             logger.info(f"📝 [EXECUTION-PATH] Adding 'analysis_started' to execution path")
             state["execution_path"].append("analysis_started")

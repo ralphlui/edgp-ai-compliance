@@ -6,6 +6,7 @@ SQS queue setup and step orchestration.
 """
 
 import logging
+import json
 from typing import Dict, Any, Optional
 
 from ...agents.workflow_agent import WorkflowAgent
@@ -39,6 +40,14 @@ class WorkflowNode:
         logger.info(f"🏗️ [WORKFLOW-START] Executing workflow node for violation {violation_id}")
 
         try:
+            def _safe_float(value: Any, default: float = 0.0) -> float:
+                try:
+                    if value is None:
+                        return default
+                    return float(value)
+                except (TypeError, ValueError):
+                    return default
+
             # Add to execution path
             logger.info(f"📝 [EXECUTION-PATH] Adding 'workflow_creation_started' to execution path")
             state["execution_path"].append("workflow_creation_started")
@@ -51,15 +60,44 @@ class WorkflowNode:
                 raise ValueError("No decision available for workflow creation")
 
             logger.info(f"✅ [DECISION-FOUND] Decision type: {decision.remediation_type.value}")
-            logger.info(f"📈 [DECISION-CONFIDENCE] Confidence: {decision.confidence_score:.2f}")
+            decision_confidence = _safe_float(getattr(decision, "confidence_score", None), 0.0)
+            logger.info("📈 [DECISION-CONFIDENCE] Confidence: %.2f", decision_confidence)
 
-            complexity_assessment = state.get("complexity_assessment", {})
-            feasibility_score = state.get("feasibility_score", 0.0)
+            complexity_assessment = state.get("complexity_assessment") or {}
+            feasibility_score = _safe_float(state.get("feasibility_score"), 0.0)
             feasibility_details = {
                 "feasibility_score": feasibility_score,
                 "complexity_assessment": complexity_assessment
             }
-            logger.info(f"📊 [FEASIBILITY-DATA] Score: {feasibility_score:.2f}, Complexity factors: {len(complexity_assessment)}")
+            logger.info(
+                "📊 [FEASIBILITY-DATA] Score: %.2f, Complexity factors: %d",
+                feasibility_score,
+                len(complexity_assessment) if isinstance(complexity_assessment, dict) else 0,
+            )
+
+            prompts = state.setdefault("context", {}).setdefault("node_prompts", {})
+            workflow_prompt = {
+                "violation_id": state["signal"].violation.rule_id,
+                "decision": {
+                    "remediation_type": decision.remediation_type.value,
+                    "confidence_score": decision_confidence,
+                    "estimated_effort": getattr(decision, "estimated_effort", None),
+                    "risk_if_delayed": getattr(decision, "risk_if_delayed", None).value
+                    if hasattr(getattr(decision, "risk_if_delayed", None), "value")
+                    else getattr(decision, "risk_if_delayed", None),
+                },
+                "feasibility_score": feasibility_score,
+                "complexity": complexity_assessment.get("overall_complexity"),
+                "queue_config": {
+                    "main_queue_url": self.sqs_tool.config.get("main_queue_url"),
+                    "dlq_url": self.sqs_tool.config.get("dlq_url"),
+                }
+            }
+            logger.info(
+                "🧾 [NODE-PROMPT][workflow] %s",
+                json.dumps(workflow_prompt, default=str)
+            )
+            prompts["workflow"] = workflow_prompt
 
             # Create the workflow
             logger.info(f"🔧 [WORKFLOW-CREATE] Creating workflow via WorkflowAgent for {violation_id}")
@@ -87,7 +125,21 @@ class WorkflowNode:
                 logger.info(f"📝 [STATE-UPDATE] SQS queue info stored in state and workflow")
             else:
                 logger.warning(f"⚠️ [SQS-NO-CONFIG] No SQS main queue URL configured")
-                state["errors"].append("No SQS main queue URL configured in settings")
+                queue_name = f"remediation-workflow-{workflow.id}"
+                logger.info(f"🛠️ [SQS-FALLBACK] Attempting to create workflow-specific queue {queue_name}")
+                queue_result = await self.sqs_tool.create_remediation_queue(queue_name, workflow.id)
+
+                if queue_result.get("success"):
+                    queue_url = queue_result.get("queue_url")
+                    state["sqs_queue_created"] = True
+                    state["sqs_queue_url"] = queue_url
+                    workflow.sqs_queue_url = queue_url
+                    logger.info(f"✅ [SQS-FALLBACK-SUCCESS] Created fallback queue {queue_url}")
+                else:
+                    error_msg = queue_result.get("error", "Unknown error")
+                    state["errors"].append("No SQS main queue URL configured in settings")
+                    state["errors"].append(f"Failed to create fallback queue: {error_msg}")
+                    logger.error(f"❌ [SQS-FALLBACK-FAILED] {error_msg}")
 
             # Initialize workflow based on remediation type
             await self._initialize_workflow_execution(state)

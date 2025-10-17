@@ -3,9 +3,10 @@ Configuration settings for the AI Compliance Agent
 Production-ready configuration with validation and environment variable support
 """
 
+from typing import Any, Dict, List, Optional
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field, field_validator
-from typing import List, Optional
 import secrets
 
 
@@ -177,6 +178,26 @@ class Settings(BaseSettings):
     def is_development(self) -> bool:
         """Check if running in development"""
         return self.environment == "development"
+
+    def sanitized_copy(self) -> Dict[str, Any]:
+        """
+        Return a sanitised configuration dictionary with sensitive values redacted.
+
+        Keys containing common secret markers (e.g. 'key', 'token', 'password')
+        are masked to avoid leaking credentials in logs.
+        """
+        data = self.model_dump(mode="python")
+        sensitive_markers = ("key", "token", "secret", "password")
+
+        for field, value in data.items():
+            if value is None:
+                continue
+
+            lower_name = field.lower()
+            if any(marker in lower_name for marker in sensitive_markers):
+                data[field] = "***REDACTED***"
+
+        return data
 
     def validate_required_secrets(self) -> List[str]:
         """Validate that required secrets are set"""
