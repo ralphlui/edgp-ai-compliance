@@ -108,7 +108,7 @@ async def lifespan(app: FastAPI):
                             
                             # Prepare remediation data in the required format
                             remediation_data = {
-                                "id": f"customer_{violation.customer_id}",  # Use actual database ID
+                                "id": str(violation.customer_id),  # Use actual database ID without prefix
                                 "action": "delete",
                                 "message": f"Customer data retention exceeded by {violation.data_age_days - violation.retention_limit_days} days under GDPR Article 17",
                                 "field_name": "created_date",  # Actual violated database field

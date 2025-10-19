@@ -85,7 +85,7 @@ class ComplianceRemediationService:
         try:
             # Use the exact format provided by the user
             remediation_payload = {
-                "id": remediation_data.get("id", f"customer_{datetime.now().strftime('%Y%m%d_%H%M%S')}"),
+                "id": remediation_data.get("id", datetime.now().strftime('%Y%m%d_%H%M%S')),
                 "action": remediation_data.get("action", "delete"),
                 "message": remediation_data.get("message", "Customer data retention compliance violation"),
                 "field_name": remediation_data.get("field_name", "customer_profile"),
