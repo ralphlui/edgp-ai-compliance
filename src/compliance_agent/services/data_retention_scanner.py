@@ -36,11 +36,14 @@ class DataRetentionScanner:
     def __init__(self):
         # Import here to avoid circular imports
         from config.settings import settings
-        
+        from src.compliance_agent.services.ai_secrets_service import get_openai_api_key
+
         # Use the model specified in environment configuration
         model_name = settings.ai_model_name or "gpt-3.5-turbo"
-        api_key = settings.openai_api_key
-        
+
+        # Fetch API key from Secrets Manager
+        api_key = get_openai_api_key()
+
         if not api_key:
             logger.warning("No OpenAI API key found - AI analysis will be disabled")
             self.llm = None

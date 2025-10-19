@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import re
 from typing import Any, Dict, List, Optional
 
@@ -31,14 +30,19 @@ class DecisionAgent:
         if SETTINGS_AVAILABLE and settings:
             self.model_name = model_name or getattr(settings, "ai_model_name", "gpt-3.5-turbo")
             self.temperature = temperature if temperature is not None else getattr(settings, "ai_temperature", 0.1)
-            api_key = getattr(settings, "openai_api_key", None)
         else:
             self.model_name = model_name or "gpt-3.5-turbo"
             self.temperature = temperature if temperature is not None else 0.1
-            api_key = os.getenv("OPENAI_API_KEY")
+
+        # Fetch API key from AWS Secrets Manager
+        logger.info("Fetching OpenAI API key from AWS Secrets Manager")
+        api_key = self._get_api_key_from_secrets_manager()
 
         # Provide a harmless default key so unit tests that mock the OpenAI client do not fail.
         self.api_key = api_key or "test-key"
+
+        if not api_key:
+            logger.warning("No OpenAI API key found - LLM decisions will be disabled, falling back to rule-based logic")
 
         self._system_message = (
             "You are an AI compliance remediation specialist. "
@@ -492,3 +496,19 @@ class DecisionAgent:
             "cross_system_impact": factors.get("cross_system_impact", "low"),
             "context": signal.context,
         }
+
+    @staticmethod
+    def _get_api_key_from_secrets_manager() -> Optional[str]:
+        """Fetch OpenAI API key from AWS Secrets Manager"""
+        try:
+            from src.compliance_agent.services.ai_secrets_service import get_openai_api_key
+            api_key = get_openai_api_key()
+            if api_key:
+                logger.info("Successfully retrieved OpenAI API key from AWS Secrets Manager")
+                return api_key
+            else:
+                logger.warning("Could not retrieve OpenAI API key from AWS Secrets Manager")
+                return None
+        except Exception as e:
+            logger.warning(f"Failed to fetch API key from Secrets Manager: {str(e)}")
+            return None

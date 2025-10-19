@@ -236,6 +236,79 @@ class EDGPDatabaseService:
             # No database connection available
             raise Exception("No database connection available. Please check database configuration.")
     
+    def _get_mock_customers(self) -> List[CustomerData]:
+        """
+        Generate mock customer data for testing purposes
+        Returns a list of mock CustomerData objects
+        """
+        now = datetime.now()
+
+        mock_customers = [
+            CustomerData(
+                id=1,
+                email="customer1@example.com",
+                phone="+65-1234-5678",
+                firstname="John",
+                lastname="Doe",
+                created_date=now - timedelta(days=365*8),  # 8 years ago
+                updated_date=now - timedelta(days=30),
+                is_archived=False,
+                domain_name="example.com",
+                workflow_tracker_id="WF-001"
+            ),
+            CustomerData(
+                id=2,
+                email="customer2@example.eu",
+                phone="+44-2345-6789",
+                firstname="Jane",
+                lastname="Smith",
+                created_date=now - timedelta(days=365*10),  # 10 years ago
+                updated_date=now - timedelta(days=60),
+                is_archived=False,
+                domain_name="example.eu",
+                workflow_tracker_id="WF-002"
+            ),
+            CustomerData(
+                id=3,
+                email="customer3@test.sg",
+                phone="+65-9876-5432",
+                firstname="Alice",
+                lastname="Tan",
+                created_date=now - timedelta(days=365*2),  # 2 years ago
+                updated_date=now - timedelta(days=10),
+                is_archived=False,
+                domain_name="test.sg",
+                workflow_tracker_id="WF-003"
+            ),
+            CustomerData(
+                id=4,
+                email="old_customer@archived.com",
+                phone="+1-555-1234",
+                firstname="Bob",
+                lastname="Johnson",
+                created_date=now - timedelta(days=365*15),  # 15 years ago
+                updated_date=now - timedelta(days=365*5),  # Not updated in 5 years
+                is_archived=True,
+                domain_name="archived.com",
+                workflow_tracker_id="WF-004"
+            ),
+            CustomerData(
+                id=5,
+                email="recent@newdomain.com",
+                phone="+65-8888-9999",
+                firstname="Charlie",
+                lastname="Lee",
+                created_date=now - timedelta(days=180),  # 6 months ago
+                updated_date=now - timedelta(days=1),
+                is_archived=False,
+                domain_name="newdomain.com",
+                workflow_tracker_id="WF-005"
+            )
+        ]
+
+        logger.info(f"Generated {len(mock_customers)} mock customers for testing")
+        return mock_customers
+
     async def close(self):
         """Close database connections"""
         if self.pool:

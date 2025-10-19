@@ -56,16 +56,8 @@ class RemediationGraph:
             interrupt_before=["human_loop"]  # Allow manual intervention before human loop
         )
 
-        # Print ASCII visualization of the graph
-        try:
-            print("\n" + "="*80)
-            print("🔗 REMEDIATION AGENT LANGGRAPH STRUCTURE")
-            print("="*80)
-            print(self.compiled_graph.get_graph().draw_ascii())
-            print("="*80)
-            print()
-        except Exception as e:
-            logger.warning(f"Could not display graph ASCII: {str(e)}")
+        # Graph visualization removed to reduce noise in logs
+        # You can still access the graph via get_graph_visualization() API endpoint
 
     def _build_graph(self) -> StateGraph:
         """Build the LangGraph workflow"""
