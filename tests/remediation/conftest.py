@@ -307,9 +307,27 @@ def mock_environment_variables():
         "REMEDIATION_QUEUE_URL": "https://sqs.us-east-1.amazonaws.com/123456789/remediation-queue",
         "NOTIFICATION_TOPIC_ARN": "arn:aws:sns:us-east-1:123456789:remediation-notifications"
     }
-    
+
+    # Also mock the Secrets Manager to return the test API key
     with patch.dict('os.environ', env_vars):
-        yield env_vars
+        with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value="test_api_key"):
+            yield env_vars
+
+
+@pytest.fixture
+def mock_secrets_manager():
+    """Mock AWS Secrets Manager for testing"""
+    with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key') as mock:
+        mock.return_value = "test_api_key_from_secrets"
+        yield mock
+
+
+@pytest.fixture
+def mock_secrets_manager_unavailable():
+    """Mock AWS Secrets Manager being unavailable"""
+    with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key') as mock:
+        mock.return_value = None
+        yield mock
 
 
 # ==========================================

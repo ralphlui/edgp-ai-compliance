@@ -42,6 +42,16 @@ spec:
                 configMapKeyRef:
                   name: my-configmap
                   key: WORKFLOW_DATA_REMEDIATION_SQS_URL
+            - name: OPENSEARCH_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: AOSS_URL
+            - name: OPENSEARCH_INDEX_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: OPENSEARCH_COLLECTION
           resources:
            requests:
              cpu: "50m"

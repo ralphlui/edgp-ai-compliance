@@ -34,13 +34,20 @@ class InternationalCompliancePatternLoader:
         self.aws_access_key = os.getenv('AWS_ACCESS_KEY_ID')
         self.aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
         self.aws_region = os.getenv('AWS_REGION', 'ap-southeast-1')
-        
+
         # OpenSearch configuration
         self.opensearch_endpoint = os.getenv('OPENSEARCH_ENDPOINT')
         self.compliance_index = 'international-compliance-patterns'
-        
-        # OpenAI for embeddings
-        openai.api_key = os.getenv('OPENAI_API_KEY')
+
+        # OpenAI API key - fetch from Secrets Manager
+        from src.compliance_agent.services.ai_secrets_service import get_openai_api_key
+        api_key = get_openai_api_key()
+        if not api_key:
+            logger.warning("No OpenAI API key found - embeddings will not be available")
+            openai.api_key = None
+        else:
+            openai.api_key = api_key
+            logger.info("OpenAI API key configured successfully for embeddings")
         
         # Setup AWS authentication
         if self.aws_access_key and self.aws_secret_key:

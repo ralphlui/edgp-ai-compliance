@@ -100,14 +100,14 @@ class EDGPDatabaseService:
                 try:
                     config = await AWSRDSConfig.resolve_credentials(config)
                 except Exception as exc:
-                    logger.warning(
+                    logger.error(
                         "Unable to load credentials from Secrets Manager (%s). "
-                        "Falling back to mock database mode.",
+                        "Database connection failed.",
                         exc,
                     )
-                    # Fallback to mock mode
+                    # Don't fallback to mock mode - let the error propagate
                     self.is_aws_rds = False
-                    return None
+                    raise Exception(f"Database configuration failed: Unable to load credentials from Secrets Manager: {exc}")
                 
             elif username and password:
                 # Use direct credentials for AWS RDS
@@ -132,8 +132,8 @@ class EDGPDatabaseService:
                 host = 'localhost'  # Default for local
             
             if not username or not password:
-                logger.warning("Missing local database credentials – using mock database mode.")
-                return None
+                logger.error("Missing local database credentials. Please provide database username and password.")
+                raise Exception("Database configuration incomplete: Missing username or password")
             
             config = {
                 'host': host,
@@ -155,9 +155,8 @@ class EDGPDatabaseService:
             self.connection_config = await self._build_connection_config()
 
             if not self.connection_config:
-                logger.info("Database connection configuration unavailable; using mock data.")
-                self.pool = None
-                return
+                logger.error("Database connection configuration unavailable.")
+                raise Exception("Database configuration failed: No valid connection configuration available")
             
             # Try to establish connection pool
             try:
@@ -172,23 +171,14 @@ class EDGPDatabaseService:
                 logger.info(f"EDGP Database Service initialized successfully with {connection_type}")
                 
             except Exception as db_error:
-                logger.warning(f"Could not connect to database: {db_error}")
-                if self.is_aws_rds:
-                    # For AWS RDS, this is a critical error
-                    raise db_error
-                else:
-                    # For local development, allow fallback to mock mode
-                    logger.info("Using mock database mode for compliance agent")
-                    self.pool = None
+                logger.error(f"Could not connect to database: {db_error}")
+                # Don't allow fallback - raise the error
+                raise Exception(f"Database connection failed: {db_error}")
             
         except Exception as e:
             logger.error(f"Failed to initialize database service: {str(e)}")
-            if self.is_aws_rds:
-                # Don't allow mock mode for AWS RDS
-                raise e
-            else:
-                # Allow mock mode for local development
-                self.pool = None
+            # Don't allow mock mode - raise the error
+            raise e
     
     async def _test_connection(self):
         """Test database connection"""
@@ -240,60 +230,85 @@ class EDGPDatabaseService:
                         
             except Exception as e:
                 logger.error(f"Failed to query customers from database: {str(e)}")
-                # Fall back to mock data
-                return self._get_mock_customers()
+                # Don't fall back to mock data - raise the error
+                raise Exception(f"Database query failed: {str(e)}")
         else:
-            # Mock data for testing when no database is available
-            return self._get_mock_customers()
+            # No database connection available
+            raise Exception("No database connection available. Please check database configuration.")
     
     def _get_mock_customers(self) -> List[CustomerData]:
-        """Generate mock customer data for testing compliance agent"""
-        
+        """
+        Generate mock customer data for testing purposes
+        Returns a list of mock CustomerData objects
+        """
+        now = datetime.now()
+
         mock_customers = [
-            # Old customer data that should trigger compliance violations
             CustomerData(
                 id=1,
-                email="old.customer@example.com",
-                phone="+6591234567",
-                firstname="Old",
-                lastname="Customer",
-                created_date=datetime.now() - timedelta(days=8*365),  # 8 years old
-                updated_date=datetime.now() - timedelta(days=4*365),  # Last activity 4 years ago
+                email="customer1@example.com",
+                phone="+65-1234-5678",
+                firstname="John",
+                lastname="Doe",
+                created_date=now - timedelta(days=365*8),  # 8 years ago
+                updated_date=now - timedelta(days=30),
                 is_archived=False,
                 domain_name="example.com",
-                workflow_tracker_id="WF_TRACK_001"
+                workflow_tracker_id="WF-001"
             ),
-            # Recent customer data that should be compliant
             CustomerData(
                 id=2,
-                email="recent.customer@example.com",
-                phone="+6591234568",
-                firstname="Recent",
-                lastname="Customer",
-                created_date=datetime.now() - timedelta(days=30),  # 30 days old
-                updated_date=datetime.now() - timedelta(days=1),   # Recent activity
+                email="customer2@example.eu",
+                phone="+44-2345-6789",
+                firstname="Jane",
+                lastname="Smith",
+                created_date=now - timedelta(days=365*10),  # 10 years ago
+                updated_date=now - timedelta(days=60),
                 is_archived=False,
-                domain_name="example.com",
-                workflow_tracker_id="WF_TRACK_002"
+                domain_name="example.eu",
+                workflow_tracker_id="WF-002"
             ),
-            # Inactive customer that exceeds retention limit
             CustomerData(
                 id=3,
-                email="inactive.customer@example.com",
-                phone="+6591234569",
-                firstname="Inactive",
-                lastname="Customer",
-                created_date=datetime.now() - timedelta(days=5*365),  # 5 years old
-                updated_date=datetime.now() - timedelta(days=4*365),  # No activity for 4 years
+                email="customer3@test.sg",
+                phone="+65-9876-5432",
+                firstname="Alice",
+                lastname="Tan",
+                created_date=now - timedelta(days=365*2),  # 2 years ago
+                updated_date=now - timedelta(days=10),
                 is_archived=False,
-                domain_name="example.com",
-                workflow_tracker_id="WF_TRACK_003"
+                domain_name="test.sg",
+                workflow_tracker_id="WF-003"
+            ),
+            CustomerData(
+                id=4,
+                email="old_customer@archived.com",
+                phone="+1-555-1234",
+                firstname="Bob",
+                lastname="Johnson",
+                created_date=now - timedelta(days=365*15),  # 15 years ago
+                updated_date=now - timedelta(days=365*5),  # Not updated in 5 years
+                is_archived=True,
+                domain_name="archived.com",
+                workflow_tracker_id="WF-004"
+            ),
+            CustomerData(
+                id=5,
+                email="recent@newdomain.com",
+                phone="+65-8888-9999",
+                firstname="Charlie",
+                lastname="Lee",
+                created_date=now - timedelta(days=180),  # 6 months ago
+                updated_date=now - timedelta(days=1),
+                is_archived=False,
+                domain_name="newdomain.com",
+                workflow_tracker_id="WF-005"
             )
         ]
-        
-        logger.info(f"Generated {len(mock_customers)} mock customer records for compliance testing")
+
+        logger.info(f"Generated {len(mock_customers)} mock customers for testing")
         return mock_customers
-    
+
     async def close(self):
         """Close database connections"""
         if self.pool:

@@ -126,7 +126,17 @@ class InternationalAIComplianceAgent:
         self.db_service = EDGPDatabaseService()
         self.ai_analyzer = AIComplianceAnalyzer()
         self.remediation_service = ComplianceRemediationService()
-        
+
+        # OpenAI API key - fetch from Secrets Manager
+        from src.compliance_agent.services.ai_secrets_service import get_openai_api_key
+        api_key = get_openai_api_key()
+        if api_key:
+            openai.api_key = api_key
+            logger.info("OpenAI API key configured successfully for compliance agent")
+        else:
+            logger.warning("No OpenAI API key found - embeddings will be disabled")
+            openai.api_key = None
+
         # OpenSearch configuration for compliance patterns
         self._setup_opensearch()
         
