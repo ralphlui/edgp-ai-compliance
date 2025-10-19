@@ -100,14 +100,14 @@ class EDGPDatabaseService:
                 try:
                     config = await AWSRDSConfig.resolve_credentials(config)
                 except Exception as exc:
-                    logger.warning(
+                    logger.error(
                         "Unable to load credentials from Secrets Manager (%s). "
-                        "Falling back to mock database mode.",
+                        "Database connection failed.",
                         exc,
                     )
-                    # Fallback to mock mode
+                    # Don't fallback to mock mode - let the error propagate
                     self.is_aws_rds = False
-                    return None
+                    raise Exception(f"Database configuration failed: Unable to load credentials from Secrets Manager: {exc}")
                 
             elif username and password:
                 # Use direct credentials for AWS RDS
@@ -132,8 +132,8 @@ class EDGPDatabaseService:
                 host = 'localhost'  # Default for local
             
             if not username or not password:
-                logger.warning("Missing local database credentials – using mock database mode.")
-                return None
+                logger.error("Missing local database credentials. Please provide database username and password.")
+                raise Exception("Database configuration incomplete: Missing username or password")
             
             config = {
                 'host': host,
@@ -155,9 +155,8 @@ class EDGPDatabaseService:
             self.connection_config = await self._build_connection_config()
 
             if not self.connection_config:
-                logger.info("Database connection configuration unavailable; using mock data.")
-                self.pool = None
-                return
+                logger.error("Database connection configuration unavailable.")
+                raise Exception("Database configuration failed: No valid connection configuration available")
             
             # Try to establish connection pool
             try:
@@ -172,23 +171,14 @@ class EDGPDatabaseService:
                 logger.info(f"EDGP Database Service initialized successfully with {connection_type}")
                 
             except Exception as db_error:
-                logger.warning(f"Could not connect to database: {db_error}")
-                if self.is_aws_rds:
-                    # For AWS RDS, this is a critical error
-                    raise db_error
-                else:
-                    # For local development, allow fallback to mock mode
-                    logger.info("Using mock database mode for compliance agent")
-                    self.pool = None
+                logger.error(f"Could not connect to database: {db_error}")
+                # Don't allow fallback - raise the error
+                raise Exception(f"Database connection failed: {db_error}")
             
         except Exception as e:
             logger.error(f"Failed to initialize database service: {str(e)}")
-            if self.is_aws_rds:
-                # Don't allow mock mode for AWS RDS
-                raise e
-            else:
-                # Allow mock mode for local development
-                self.pool = None
+            # Don't allow mock mode - raise the error
+            raise e
     
     async def _test_connection(self):
         """Test database connection"""
@@ -240,59 +230,11 @@ class EDGPDatabaseService:
                         
             except Exception as e:
                 logger.error(f"Failed to query customers from database: {str(e)}")
-                # Fall back to mock data
-                return self._get_mock_customers()
+                # Don't fall back to mock data - raise the error
+                raise Exception(f"Database query failed: {str(e)}")
         else:
-            # Mock data for testing when no database is available
-            return self._get_mock_customers()
-    
-    def _get_mock_customers(self) -> List[CustomerData]:
-        """Generate mock customer data for testing compliance agent"""
-        
-        mock_customers = [
-            # Old customer data that should trigger compliance violations
-            CustomerData(
-                id=1,
-                email="old.customer@example.com",
-                phone="+6591234567",
-                firstname="Old",
-                lastname="Customer",
-                created_date=datetime.now() - timedelta(days=8*365),  # 8 years old
-                updated_date=datetime.now() - timedelta(days=4*365),  # Last activity 4 years ago
-                is_archived=False,
-                domain_name="example.com",
-                workflow_tracker_id="WF_TRACK_001"
-            ),
-            # Recent customer data that should be compliant
-            CustomerData(
-                id=2,
-                email="recent.customer@example.com",
-                phone="+6591234568",
-                firstname="Recent",
-                lastname="Customer",
-                created_date=datetime.now() - timedelta(days=30),  # 30 days old
-                updated_date=datetime.now() - timedelta(days=1),   # Recent activity
-                is_archived=False,
-                domain_name="example.com",
-                workflow_tracker_id="WF_TRACK_002"
-            ),
-            # Inactive customer that exceeds retention limit
-            CustomerData(
-                id=3,
-                email="inactive.customer@example.com",
-                phone="+6591234569",
-                firstname="Inactive",
-                lastname="Customer",
-                created_date=datetime.now() - timedelta(days=5*365),  # 5 years old
-                updated_date=datetime.now() - timedelta(days=4*365),  # No activity for 4 years
-                is_archived=False,
-                domain_name="example.com",
-                workflow_tracker_id="WF_TRACK_003"
-            )
-        ]
-        
-        logger.info(f"Generated {len(mock_customers)} mock customer records for compliance testing")
-        return mock_customers
+            # No database connection available
+            raise Exception("No database connection available. Please check database configuration.")
     
     async def close(self):
         """Close database connections"""
