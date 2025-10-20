@@ -121,7 +121,7 @@ class AISecretsManager:
             secret_dict = self.get_secret(secret_name)
 
             # Try common key names in the secret
-            for key_name in ["ai_agent_api_key", "openai_api_key", "OPENAI_API_KEY", "AI_AGENT_API_KEY", "api_key", "API_KEY"]:
+            for key_name in ["ai_agent_api_key", "AI_AGENT_API_KEY", "openai_api_key", "OPENAI_API_KEY", "api_key", "API_KEY"]:
                 if key_name in secret_dict:
                     api_key = secret_dict[key_name]
                     if api_key and not self._is_placeholder(api_key):

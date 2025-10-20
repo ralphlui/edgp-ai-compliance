@@ -32,8 +32,15 @@ from pathlib import Path
 # Configure PII-protected logging
 import structlog
 
-# Load environment variables
-load_dotenv('.env.development')
+# Load environment variables based on APP_ENV
+app_env = os.getenv("APP_ENV", "development")
+env_file = f'.env.{app_env}'
+if os.path.exists(env_file):
+    load_dotenv(env_file)
+    print(f"Loaded environment from: {env_file}")
+else:
+    load_dotenv('.env')
+    print(f"Environment file {env_file} not found, using .env")
 
 # Configure structured logging with PII protection
 def mask_pii_processor(logger, method_name, event_dict):
