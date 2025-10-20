@@ -20,8 +20,15 @@ from dotenv import load_dotenv
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv('.env.development')
+# Load environment variables based on APP_ENV
+app_env = os.getenv("APP_ENV", "development")
+env_file = f'.env.{app_env}'
+if os.path.exists(env_file):
+    load_dotenv(env_file)
+    logger.info(f"Loaded environment from: {env_file}")
+else:
+    load_dotenv('.env')
+    logger.info(f"Environment file {env_file} not found, using .env")
 
 class InternationalCompliancePatternLoader:
     """
