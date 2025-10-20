@@ -15,6 +15,7 @@ from ..models.compliance_models import (
     ComplianceViolation
 )
 from ..utils.logger import get_logger
+from .llm_service import LLMComplianceService
 
 logger = get_logger(__name__)
 
@@ -29,10 +30,22 @@ class AIComplianceAnalyzer:
         self.model_initialized = False
         self.risk_patterns = {}
         self.compliance_keywords = {}
+        self.llm_service = LLMComplianceService()
     
-    async def initialize(self):
+    async def initialize(self, secret_name: Optional[str] = None):
         """Initialize AI models and load training data"""
         logger.info("Initializing AI Compliance Analyzer")
+        print("🤖 Initializing AI Compliance Analyzer...")
+        
+        # Initialize LLM service
+        print(f"🔑 Initializing LLM service with secret: {secret_name}")
+        llm_initialized = await self.llm_service.initialize(secret_name)
+        if llm_initialized:
+            logger.info("✅ LLM service initialized - AI suggestions enabled")
+            print("✅ LLM service initialized - AI suggestions enabled")
+        else:
+            logger.warning("⚠️ LLM service not available - using fallback suggestions")
+            print("⚠️ LLM service not available - using fallback suggestions")
         
         # Load risk patterns and compliance keywords
         await self._load_risk_patterns()
@@ -40,6 +53,7 @@ class AIComplianceAnalyzer:
         
         self.model_initialized = True
         logger.info("AI Compliance Analyzer initialized successfully")
+        print(f"✅ AI Compliance Analyzer initialized with LLM: {llm_initialized}")
     
     async def analyze_activity(
         self,
@@ -353,25 +367,114 @@ class AIComplianceAnalyzer:
         if not self.model_initialized:
             await self.initialize()
         
-        # Simple analysis for now - in real implementation would use LLM
+        # Use LLM service for advanced analysis
         try:
-            # Extract key information from the text
-            text_lower = text.lower()
+            # Extract violation context from the text for LLM analysis
+            violation_data = self._extract_violation_context(text)
             
-            # Check for compliance-related keywords
-            if "retention" in text_lower and "days" in text_lower:
-                if "exceeds" in text_lower or "over" in text_lower:
-                    return "Data retention period has been exceeded, requiring immediate review and potential deletion to ensure compliance with data protection regulations."
-            
-            if "pdpa" in text_lower or "singapore" in text_lower:
-                return "Singapore PDPA compliance analysis indicates potential data protection issues requiring remediation."
-            
-            if "gdpr" in text_lower or "eu" in text_lower:
-                return "EU GDPR compliance analysis shows potential privacy regulation violations that need attention."
-            
-            # Generic compliance analysis response
-            return "Compliance analysis completed with recommendations for improving data protection practices."
+            # Get LLM-powered suggestion
+            if self.llm_service.is_initialized:
+                llm_result = await self.llm_service.generate_compliance_suggestion(
+                    violation_data, 
+                    violation_data.get('framework', 'PDPA')
+                )
+                
+                logger.info("✅ Generated LLM-powered compliance suggestion")
+                return llm_result.get('description', 'Compliance analysis completed with AI recommendations.')
+            else:
+                # Fallback to enhanced keyword analysis
+                return self._enhanced_keyword_analysis(text)
             
         except Exception as e:
-            logger.error(f"Error in text analysis: {str(e)}")
-            return "Compliance analysis completed - manual review recommended."
+            logger.error(f"Error in LLM text analysis: {str(e)}")
+            return self._enhanced_keyword_analysis(text)
+    
+    def _extract_violation_context(self, text: str) -> Dict[str, Any]:
+        """Extract violation context from prompt text for LLM analysis"""
+        context = {
+            'customer_id': 'Unknown',
+            'data_age_days': 0,
+            'excess_days': 0,
+            'retention_limit_days': 0,
+            'is_archived': False,
+            'framework': 'PDPA',
+            'violation_type': 'DATA_RETENTION_EXCEEDED'
+        }
+        
+        text_lower = text.lower()
+        
+        # Extract framework
+        if 'pdpa' in text_lower or 'singapore' in text_lower:
+            context['framework'] = 'PDPA'
+        elif 'gdpr' in text_lower or 'eu' in text_lower:
+            context['framework'] = 'GDPR'
+        
+        # Extract numeric values from text
+        import re
+        
+        # Look for "data age: X days"
+        age_match = re.search(r'data age[:\s]+(\d+)\s*days', text_lower)
+        if age_match:
+            context['data_age_days'] = int(age_match.group(1))
+        
+        # Look for "retention limit: X days"
+        limit_match = re.search(r'retention limit[:\s]+(\d+)\s*days', text_lower)
+        if limit_match:
+            context['retention_limit_days'] = int(limit_match.group(1))
+        
+        # Look for "excess period: X days" or "exceeds X days"
+        excess_match = re.search(r'excess[^:]*[:\s]+(\d+)\s*days', text_lower) or \
+                     re.search(r'exceeds[^0-9]*(\d+)\s*days', text_lower)
+        if excess_match:
+            context['excess_days'] = int(excess_match.group(1))
+        
+        # Look for archived status
+        if 'archived' in text_lower:
+            context['is_archived'] = 'true' in text_lower or 'yes' in text_lower
+        
+        return context
+    
+    def _enhanced_keyword_analysis(self, text: str) -> str:
+        """Enhanced keyword-based analysis as fallback"""
+        text_lower = text.lower()
+        
+        # Check for compliance-related keywords
+        if "retention" in text_lower and "days" in text_lower:
+            if "exceeds" in text_lower or "over" in text_lower:
+                return "Data retention period has been exceeded, requiring immediate review and potential deletion to ensure compliance with data protection regulations."
+        
+        if "pdpa" in text_lower or "singapore" in text_lower:
+            return "Singapore PDPA compliance analysis indicates potential data protection issues requiring remediation."
+        
+        if "gdpr" in text_lower or "eu" in text_lower:
+            return "EU GDPR compliance analysis shows potential privacy regulation violations that need attention."
+        
+        # Generic compliance analysis response
+        return "Compliance analysis completed with recommendations for improving data protection practices."
+    
+    async def generate_violation_suggestions(
+        self, 
+        violation_data: Dict[str, Any], 
+        framework: str = "PDPA"
+    ) -> Dict[str, str]:
+        """
+        Generate comprehensive suggestions for a compliance violation
+        
+        Args:
+            violation_data: Violation details
+            framework: Compliance framework
+            
+        Returns:
+            Dictionary with detailed suggestions and recommendations
+        """
+        if not self.model_initialized:
+            await self.initialize()
+        
+        if self.llm_service.is_initialized:
+            logger.info("🤖 Generating LLM-powered compliance suggestions")
+            print(f"🤖 Requesting LLM analysis for {framework} violation...")
+            return await self.llm_service.generate_compliance_suggestion(violation_data, framework)
+        else:
+            logger.warning("Using fallback compliance suggestions (LLM not available)")
+            print("⚠️ Using fallback suggestions - LLM not available")
+            return self.llm_service._get_fallback_suggestion(violation_data, framework)

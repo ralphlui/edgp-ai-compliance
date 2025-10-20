@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     # AI/ML Settings
     ai_agent_api_key: Optional[str] = Field(default=None, description="Primary AI Agent API key")
     openai_api_key: Optional[str] = Field(default=None, description="OpenAI API key (for backward compatibility)")
+    ai_secret_name: Optional[str] = Field(default=None, description="AWS Secrets Manager secret name for AI API keys")
     ai_model_name: str = Field(default="gpt-3.5-turbo", description="AI model name")
     ai_max_tokens: int = Field(default=2000, ge=100, le=32000)
     ai_temperature: float = Field(default=0.1, ge=0.0, le=2.0)
