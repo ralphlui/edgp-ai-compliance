@@ -45,12 +45,13 @@ class Settings(BaseSettings):
     edgp_db_secret_name: Optional[str] = Field(default=None, description="AWS Secrets Manager secret name for DB credentials")
     local_db_url: Optional[str] = Field(default=None, description="Local database URL override")
     
-    # AWS RDS Configuration (for production/staging environments) - DEPRECATED, use edgp_db_* instead
-    aws_rds_enabled: bool = Field(default=False, description="Enable AWS RDS connection")
-    aws_rds_host: Optional[str] = Field(default=None, description="AWS RDS endpoint")
-    aws_rds_port: int = Field(default=3306, ge=1, le=65535, description="AWS RDS port")
-    aws_rds_database: str = Field(default="masterdata", description="AWS RDS database name")
-    aws_secrets_manager_enabled: bool = Field(default=False, description="Use AWS Secrets Manager for credentials")
+    # AWS RDS Configuration (for production/staging environments)
+    aws_rds_enabled: bool = Field(default=True, env="AWS_RDS_ENABLED", description="Enable AWS RDS connection")
+    aws_rds_host: Optional[str] = Field(default=None, env="AWS_RDS_HOST", description="AWS RDS endpoint")
+    aws_rds_port: int = Field(default=3306, ge=1, le=65535, env="AWS_RDS_PORT", description="AWS RDS port")
+    aws_rds_database: str = Field(default="masterdata", env="AWS_RDS_DATABASE", description="AWS RDS database name")
+    aws_rds_secret_name: Optional[str] = Field(default=None, env="AWS_RDS_SECRET_NAME", description="AWS RDS Secrets Manager secret name")
+    aws_secrets_manager_enabled: bool = Field(default=True, env="AWS_SECRETS_MANAGER_ENABLED", description="Use AWS Secrets Manager for credentials")
     aws_secret_name: Optional[str] = Field(default=None, description="AWS Secrets Manager secret name")
     aws_region: str = Field(default="ap-southeast-1", description="AWS region")
 
