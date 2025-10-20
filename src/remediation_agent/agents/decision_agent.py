@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from typing import Any, Dict, List, Optional
 
@@ -502,7 +503,18 @@ class DecisionAgent:
         """Fetch OpenAI API key from AWS Secrets Manager"""
         try:
             from src.compliance_agent.services.ai_secrets_service import get_openai_api_key
-            api_key = get_openai_api_key()
+            from config.settings import settings
+            
+            # Use the AI-specific secret name, not the database secret name
+            secret_name = getattr(settings, 'ai_secret_name', None)
+            
+            if secret_name:
+                logger.info(f"Retrieving OpenAI API key from AWS Secrets Manager: {secret_name}")
+                api_key = get_openai_api_key(secret_name)
+            else:
+                logger.info("Retrieving OpenAI API key from AWS Secrets Manager (default)")
+                api_key = get_openai_api_key()
+                
             if api_key:
                 logger.info("Successfully retrieved OpenAI API key from AWS Secrets Manager")
                 return api_key

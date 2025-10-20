@@ -69,8 +69,11 @@ async def lifespan(app: FastAPI):
 
     # Initialize and start automatic background compliance scanning
     try:
+        print("🔧 Initializing International AI Compliance Agent with AWS Secrets Manager...")
         background_compliance_agent = InternationalAIComplianceAgent()
+        print("🔧 Starting agent initialization (this will show database connection details)...")
         await background_compliance_agent.initialize()
+        print("✅ International AI Compliance Agent initialized successfully")
         
         # Start background compliance scanning every 5 minutes
         async def run_periodic_compliance():

@@ -116,9 +116,7 @@ class AWSRDSConfig:
             'db': database,
             'charset': 'utf8mb4',
             'autocommit': True,
-            'connect_timeout': 60,
-            'read_timeout': 60,
-            'write_timeout': 60
+            'connect_timeout': 60
         }
         
         if use_secrets_manager and secret_name:
@@ -165,6 +163,12 @@ class AWSRDSConfig:
         resolved_config = config.copy()
         resolved_config['user'] = credentials.get('username')
         resolved_config['password'] = credentials.get('password')
+        
+        # Also update host and port if they come from secrets manager
+        if credentials.get('host'):
+            resolved_config['host'] = credentials.get('host')
+        if credentials.get('port'):
+            resolved_config['port'] = int(credentials.get('port'))
         
         # Remove secrets manager specific keys from final config
         resolved_config.pop('secret_name', None)

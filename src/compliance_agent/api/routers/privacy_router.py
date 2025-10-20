@@ -84,7 +84,7 @@ async def record_consent(request: ConsentManagementRequest):
     Record consent for data processing
     """
     try:
-        from datetime import datetime, UTC
+        from datetime import datetime, timezone
         
         logger.info(f"Recording consent for subject {request.subject_id}")
         
@@ -94,7 +94,7 @@ async def record_consent(request: ConsentManagementRequest):
             purpose=request.purpose,
             data_types=request.data_types,
             consent_given=request.consent_given,
-            consent_timestamp=datetime.now(UTC),
+            consent_timestamp=datetime.now(timezone.utc),
             consent_method=request.consent_method,
             legal_basis=request.legal_basis
         )

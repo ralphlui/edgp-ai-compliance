@@ -1,0 +1,264 @@
+{
+  "compliance_data": [
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "GDPR-Article-1"
+      },
+      "document": {
+        "id": "GDPR-Article-1",
+        "title": "Article 1 – Subject-matter and objectives",
+        "content": "This Regulation lays down rules relating to the protection of natural persons with regard to the processing of personal data and rules relating to the free movement of personal data. It protects fundamental rights and freedoms of natural persons, in particular their right to the protection of personal data. The free movement of personal data within the Union shall neither be restricted nor prohibited for reasons connected with the protection of natural persons with regard to the processing of personal data.",
+        "category": "General Provisions",
+        "applies_to": ["Controller", "Processor"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "GDPR-Article-2"
+      },
+      "document": {
+        "id": "GDPR-Article-2",
+        "title": "Article 2 – Material scope",
+        "content": "This Regulation applies to the processing of personal data wholly or partly by automated means and to the processing other than by automated means of personal data which form part of a filing system. It does not apply to activities outside the scope of EU law, law enforcement activities, purely personal or household activities, or activities by competent authorities for the purposes of prevention, investigation, detection or prosecution of criminal offences.",
+        "category": "General Provisions",
+        "applies_to": ["Controller", "Processor"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "GDPR-Article-3"
+      },
+      "document": {
+        "id": "GDPR-Article-3",
+        "title": "Article 3 – Territorial scope",
+        "content": "This Regulation applies to the processing of personal data in the context of the activities of an establishment of a controller or a processor in the Union, regardless of whether the processing takes place in the Union or not. It also applies to processing of personal data of data subjects who are in the Union by a controller or processor not established in the Union where the processing relates to offering goods or services or monitoring their behaviour within the Union.",
+        "category": "General Provisions",
+        "applies_to": ["Controller", "Processor", "Non-EU Entities"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "GDPR-Article-4"
+      },
+      "document": {
+        "id": "GDPR-Article-4",
+        "title": "Article 4 – Definitions",
+        "content": "This Article defines key terms such as: 'personal data' (any information relating to an identified or identifiable natural person), 'processing' (any operation performed on personal data), 'controller' (the entity which determines the purposes and means of processing), 'processor' (the entity which processes personal data on behalf of the controller), 'profiling', 'pseudonymisation', 'consent', and others.",
+        "category": "Definitions",
+        "applies_to": ["Controller", "Processor", "Supervisory Authority"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "GDPR-Article-5"
+      },
+      "document": {
+        "id": "GDPR-Article-5",
+        "title": "Article 5 – Principles relating to processing of personal data",
+        "content": "Personal data shall be processed lawfully, fairly and in a transparent manner. It shall be collected for specified, explicit and legitimate purposes and not further processed in a manner incompatible with those purposes. It shall be adequate, relevant and limited to what is necessary. It shall be accurate and kept up to date. It shall be kept no longer than necessary. It shall be processed in a manner that ensures appropriate security. The controller shall be responsible for and be able to demonstrate compliance ('accountability').",
+        "category": "Principles",
+        "applies_to": ["Controller", "Processor"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "GDPR-Article-6"
+      },
+      "document": {
+        "id": "GDPR-Article-6",
+        "title": "Article 6 – Lawfulness of processing",
+        "content": "Processing shall be lawful only if at least one of the following applies: the data subject has given consent; processing is necessary for contract performance; compliance with legal obligation; protection of vital interests; performance of a task carried out in the public interest or in the exercise of official authority; or legitimate interests pursued by the controller or third party, except where overridden by the interests or rights of the data subject.",
+        "category": "Principles",
+        "applies_to": ["Controller"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "GDPR-Article-7"
+      },
+      "document": {
+        "id": "GDPR-Article-7",
+        "title": "Article 7 – Conditions for consent",
+        "content": "Where processing is based on consent, the controller must be able to demonstrate that the data subject has consented. Consent requests must be clearly distinguishable and in an intelligible, easily accessible form, using clear and plain language. The data subject shall have the right to withdraw consent at any time. When assessing consent, utmost account shall be taken of whether consent was freely given, particularly in cases of imbalance of power.",
+        "category": "Consent",
+        "applies_to": ["Controller"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "GDPR-Article-8"
+      },
+      "document": {
+        "id": "GDPR-Article-8",
+        "title": "Article 8 – Conditions applicable to child's consent in relation to information society services",
+        "content": "Where Article 6(1)(a) applies, the processing of personal data of a child is lawful only if and to the extent that consent is given or authorized by the holder of parental responsibility over the child. Member States may provide by law for a lower age provided that such age is not below 13 years. Controllers must make reasonable efforts to verify that consent is given or authorized by the holder of parental responsibility.",
+        "category": "Consent",
+        "applies_to": ["Controller"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "GDPR-Article-9"
+      },
+      "document": {
+        "id": "GDPR-Article-9",
+        "title": "Article 9 – Processing of special categories of personal data",
+        "content": "Processing of personal data revealing racial or ethnic origin, political opinions, religious or philosophical beliefs, trade-union membership, genetic data, biometric data for identification, health data, or data concerning sex life or sexual orientation is prohibited, unless specific conditions are met (explicit consent, vital interests, legal claims, substantial public interest, medical purposes, scientific/historical research, etc.).",
+        "category": "Special Categories of Data",
+        "applies_to": ["Controller", "Processor"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "GDPR-Article-10"
+      },
+      "document": {
+        "id": "GDPR-Article-10",
+        "title": "Article 10 – Processing of personal data relating to criminal convictions and offences",
+        "content": "Processing of personal data relating to criminal convictions and offences shall be carried out only under the control of official authority or when authorized by Union or Member State law providing for appropriate safeguards for the rights and freedoms of data subjects. A complete register of criminal convictions shall be kept only under the control of official authority.",
+        "category": "Special Categories of Data",
+        "applies_to": ["Controller", "Processor", "Official Authorities"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "PDPA-Section-1"
+      },
+      "document": {
+        "id": "PDPA-Section-1",
+        "title": "Section 1 – Short title and commencement",
+        "content": "This Act may be cited as the Personal Data Protection Act 2012. It applies to all organizations in Singapore unless otherwise exempted.",
+        "category": "General Provisions",
+        "applies_to": ["Organization", "Individual"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "PDPA-Section-2"
+      },
+      "document": {
+        "id": "PDPA-Section-2",
+        "title": "Section 2 – Interpretation",
+        "content": "Defines terms such as 'personal data', 'business contact information', 'data intermediary', 'organization', and 'processing'. Personal data refers to data about an individual who can be identified from that data alone or with other information that the organization has or is likely to have.",
+        "category": "Definitions",
+        "applies_to": ["Organization", "Data Intermediary"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "PDPA-Section-3"
+      },
+      "document": {
+        "id": "PDPA-Section-3",
+        "title": "Section 3 – Purpose of Act",
+        "content": "The purpose of this Act is to govern the collection, use, and disclosure of personal data by organizations in a manner that recognizes both the right of individuals to protect their personal data and the need of organizations to collect, use, or disclose personal data for legitimate and reasonable purposes.",
+        "category": "General Provisions",
+        "applies_to": ["Organization"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "PDPA-Section-4"
+      },
+      "document": {
+        "id": "PDPA-Section-4",
+        "title": "Section 4 – Application of Act",
+        "content": "This Act applies to all organizations, excluding: (a) individuals acting in a personal or domestic capacity; (b) employees acting in the course of employment; (c) public agencies; (d) organizations acting on behalf of public agencies. It also excludes business contact information.",
+        "category": "General Provisions",
+        "applies_to": ["Organization"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "PDPA-Section-5"
+      },
+      "document": {
+        "id": "PDPA-Section-5",
+        "title": "Section 5 – Consent required",
+        "content": "An organization may collect, use, or disclose personal data about an individual only with the individual's consent, unless an exception applies. Consent must be informed and voluntary.",
+        "category": "Consent",
+        "applies_to": ["Organization"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "PDPA-Section-6"
+      },
+      "document": {
+        "id": "PDPA-Section-6",
+        "title": "Section 6 – Purpose limitation",
+        "content": "An organization may collect, use, or disclose personal data about an individual only for purposes that a reasonable person would consider appropriate in the circumstances and that the individual has been informed of, unless an exception applies.",
+        "category": "Principles",
+        "applies_to": ["Organization"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "PDPA-Section-7"
+      },
+      "document": {
+        "id": "PDPA-Section-7",
+        "title": "Section 7 – Notification obligation",
+        "content": "An organization must inform the individual of the purposes for the collection, use, or disclosure of personal data on or before such collection, use, or disclosure.",
+        "category": "Principles",
+        "applies_to": ["Organization"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "PDPA-Section-8"
+      },
+      "document": {
+        "id": "PDPA-Section-8",
+        "title": "Section 8 – Access to personal data",
+        "content": "An individual has the right to request access to their personal data and to information about how it has been used or disclosed by the organization within a year before the request.",
+        "category": "Individual Rights",
+        "applies_to": ["Organization", "Individual"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "PDPA-Section-9"
+      },
+      "document": {
+        "id": "PDPA-Section-9",
+        "title": "Section 9 – Correction of personal data",
+        "content": "An individual may request correction of personal data held by an organization. The organization must correct the data unless it is satisfied on reasonable grounds that the correction should not be made.",
+        "category": "Individual Rights",
+        "applies_to": ["Organization", "Individual"]
+      }
+    },
+    {
+      "index_metadata": {
+        "_index": "edgp-compliance-info",
+        "_id": "PDPA-Section-10"
+      },
+      "document": {
+        "id": "PDPA-Section-10",
+        "title": "Section 10 – Care of personal data",
+        "content": "An organization must make reasonable security arrangements to protect personal data in its possession or control to prevent unauthorized access, collection, use, disclosure, copying, modification, disposal, or similar risks.",
+        "category": "Data Protection",
+        "applies_to": ["Organization"]
+      }
+    }
+  ]
+}
