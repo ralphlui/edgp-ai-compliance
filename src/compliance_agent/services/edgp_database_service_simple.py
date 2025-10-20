@@ -58,22 +58,23 @@ class EDGPDatabaseService:
         port = getattr(settings, 'edgp_db_port', 3306)
         username = getattr(settings, 'edgp_db_username', None)
         password = getattr(settings, 'edgp_db_password', None)
-        # Check AWS-prefixed first, then fall back to EDGP-prefixed
-        secret_name = getattr(settings, 'aws_secret_name', None) or getattr(settings, 'edgp_db_secret_name', None)
+        # Use AWS RDS secret name for database credentials
+        secret_name = getattr(settings, 'aws_rds_secret_name', None)
         database = getattr(settings, 'aws_rds_database', None) or getattr(settings, 'edgp_db_name', None)
         
         if not database:
             raise ValueError("EDGP_DB_NAME is required in environment configuration")
         
-        # Auto-detect if this is AWS RDS or local based on host and secret_name
-        is_aws_rds = False
+        # Check if AWS RDS and Secrets Manager are enabled in settings
+        aws_rds_enabled = bool(getattr(settings, 'aws_rds_enabled', False))
+        aws_secrets_enabled = bool(getattr(settings, 'aws_secrets_manager_enabled', False))
         
-        # Check if it's AWS RDS by looking for AWS RDS hostname pattern or secret name
-        if secret_name or (host and 'rds.amazonaws.com' in host):
+        if aws_rds_enabled and aws_secrets_enabled and secret_name:
             is_aws_rds = True
             self.is_aws_rds = True
-            logger.info("AWS RDS mode detected")
+            logger.info("AWS RDS mode with Secrets Manager detected")
         else:
+            is_aws_rds = False
             self.is_aws_rds = False
             logger.info("Local MySQL mode detected")
         
