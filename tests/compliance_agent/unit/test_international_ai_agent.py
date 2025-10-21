@@ -1047,13 +1047,25 @@ class TestOpenSearchConfiguration:
     """Test OpenSearch setup and configuration"""
     
     def test_setup_opensearch_disabled(self):
-        """Test 31: OpenSearch is disabled by default"""
-        agent = InternationalAIComplianceAgent()
+        """Test 31: OpenSearch can be disabled via settings"""
         
-        # OpenSearch should be disabled
-        assert agent.opensearch_enabled is False
-        assert hasattr(agent, 'opensearch_endpoint')
-        assert hasattr(agent, 'compliance_index')
+        # Mock settings with OpenSearch disabled
+        mock_settings = MagicMock()
+        mock_settings.opensearch_enabled = False
+        mock_settings.opensearch_endpoint = None
+        mock_settings.opensearch_index_name = 'test-index'
+        mock_settings.aws_access_key_id = 'test_key'
+        mock_settings.aws_secret_access_key = 'test_secret'
+        mock_settings.aws_region = 'ap-southeast-1'
+        
+        # Patch the import in the agent's _setup_opensearch method
+        with patch('config.settings.settings', mock_settings):
+            agent = InternationalAIComplianceAgent()
+            
+            # OpenSearch should be disabled
+            assert agent.opensearch_enabled is False
+            assert hasattr(agent, 'opensearch_endpoint')
+            assert hasattr(agent, 'compliance_index')
         
         logger.info("✅ Test 31 passed: OpenSearch disabled configuration")
 

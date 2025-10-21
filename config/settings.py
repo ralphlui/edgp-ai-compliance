@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     aws_rds_secret_name: Optional[str] = Field(default=None, env="AWS_RDS_SECRET_NAME", description="AWS RDS Secrets Manager secret name")
     aws_secrets_manager_enabled: bool = Field(default=True, env="AWS_SECRETS_MANAGER_ENABLED", description="Use AWS Secrets Manager for credentials")
     aws_secret_name: Optional[str] = Field(default=None, description="AWS Secrets Manager secret name")
-    aws_region: str = Field(default="ap-southeast-1", description="AWS region")
+    aws_region: str = Field(default="ap-southeast-1", env="AWS_REGION", description="AWS region")
 
     # Redis Cache
     redis_url: str = Field(default="redis://localhost:6379/0", description="Redis connection URL")
@@ -122,22 +122,29 @@ class Settings(BaseSettings):
     remediation_max_retry_attempts: int = Field(default=3, ge=1, le=10)
 
     # AWS SQS Settings
-    aws_region: str = Field(default="us-east-1", description="AWS region")
-    aws_access_key_id: Optional[str] = Field(default=None, description="AWS access key ID")
-    aws_secret_access_key: Optional[str] = Field(default=None, description="AWS secret access key")
-    aws_endpoint_url: Optional[str] = Field(default=None, description="Custom AWS endpoint (for LocalStack)")
+    aws_region: str = Field(default="us-east-1", env="AWS_REGION", description="AWS region")
+    aws_access_key_id: Optional[str] = Field(default=None, env="AWS_ACCESS_KEY_ID", description="AWS access key ID")
+    aws_secret_access_key: Optional[str] = Field(default=None, env="AWS_SECRET_ACCESS_KEY", description="AWS secret access key")
+    aws_endpoint_url: Optional[str] = Field(default=None, env="AWS_ENDPOINT_URL", description="Custom AWS endpoint (for LocalStack)")
 
     # SQS Queue URLs
-    sqs_main_queue_url: Optional[str] = None
-    sqs_dlq_url: Optional[str] = None
-    sqs_high_priority_queue_url: Optional[str] = None
-    sqs_human_intervention_queue_url: Optional[str] = None
+    sqs_main_queue_url: Optional[str] = Field(default=None, env="SQS_MAIN_QUEUE_URL", description="Main SQS queue URL")
+    sqs_dlq_url: Optional[str] = Field(default=None, env="SQS_DLQ_URL", description="Dead letter queue URL")
+    sqs_high_priority_queue_url: Optional[str] = Field(default=None, env="SQS_HIGH_PRIORITY_QUEUE_URL", description="High priority queue URL")
+    sqs_human_intervention_queue_url: Optional[str] = Field(default=None, env="SQS_HUMAN_INTERVENTION_QUEUE_URL", description="Human intervention queue URL")
 
     # SQS Configuration
     sqs_message_retention_period: int = Field(default=1209600, ge=60, le=1209600)
     sqs_visibility_timeout: int = Field(default=300, ge=0, le=43200)
     sqs_receive_message_wait_time: int = Field(default=20, ge=0, le=20)
     sqs_max_receive_count: int = Field(default=3, ge=1, le=1000)
+
+    # AWS OpenSearch Configuration
+    opensearch_enabled: bool = Field(default=True, env="OPENSEARCH_ENABLED", description="Enable OpenSearch for compliance patterns")
+    opensearch_endpoint: Optional[str] = Field(default=None, env="OPENSEARCH_ENDPOINT", description="OpenSearch endpoint URL")
+    opensearch_index_name: str = Field(default="edgp-compliance-info", env="OPENSEARCH_INDEX_NAME", description="OpenSearch index name")
+    opensearch_timeout: int = Field(default=30, ge=5, le=300, env="OPENSEARCH_TIMEOUT", description="OpenSearch request timeout in seconds")
+    opensearch_max_retries: int = Field(default=3, ge=1, le=10, env="OPENSEARCH_MAX_RETRIES", description="OpenSearch max retries")
 
     # Health Check
     health_check_interval: int = Field(default=30, ge=5, description="Health check interval in seconds")
