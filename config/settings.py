@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     aws_rds_secret_name: Optional[str] = Field(default=None, env="AWS_RDS_SECRET_NAME", description="AWS RDS Secrets Manager secret name")
     aws_secrets_manager_enabled: bool = Field(default=True, env="AWS_SECRETS_MANAGER_ENABLED", description="Use AWS Secrets Manager for credentials")
     aws_secret_name: Optional[str] = Field(default=None, description="AWS Secrets Manager secret name")
-    aws_region: str = Field(default="ap-southeast-1", description="AWS region")
+    aws_region: str = Field(default="ap-southeast-1", env="AWS_REGION", description="AWS region")
 
     # Redis Cache
     redis_url: str = Field(default="redis://localhost:6379/0", description="Redis connection URL")
