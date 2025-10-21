@@ -470,15 +470,27 @@ class TestOpenSearchIndexCreation:
         mock_client.indices.exists.return_value = False
         mock_client.indices.create.return_value = {'acknowledged': True}
         
-        with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
-            with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch', return_value=mock_client):
-                loader = InternationalCompliancePatternLoader()
-                loader.client = mock_client
-                
-                result = await loader.create_compliance_index()
-                
-                assert result is True
-                mock_client.indices.create.assert_called_once()
+        # Mock settings with OpenSearch enabled
+        mock_settings = MagicMock()
+        mock_settings.opensearch_enabled = True
+        mock_settings.opensearch_endpoint = 'https://test-opensearch.example.com'
+        mock_settings.opensearch_index_name = 'test-index'
+        mock_settings.opensearch_timeout = 30
+        mock_settings.opensearch_max_retries = 3
+        mock_settings.aws_access_key_id = 'test_key'
+        mock_settings.aws_secret_access_key = 'test_secret'
+        mock_settings.aws_region = 'ap-southeast-1'
+        
+        with patch('config.settings.settings', mock_settings):
+            with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
+                with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch', return_value=mock_client):
+                    loader = InternationalCompliancePatternLoader()
+                    loader.client = mock_client
+                    
+                    result = await loader.create_compliance_index()
+                    
+                    assert result is True
+                    mock_client.indices.create.assert_called_once()
         
         logger.info("✅ Test 21 passed: Create new index")
     
@@ -489,15 +501,27 @@ class TestOpenSearchIndexCreation:
         mock_client = MagicMock()
         mock_client.indices.exists.return_value = True
         
-        with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
-            with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch', return_value=mock_client):
-                loader = InternationalCompliancePatternLoader()
-                loader.client = mock_client
-                
-                result = await loader.create_compliance_index()
-                
-                assert result is True
-                mock_client.indices.create.assert_not_called()
+        # Mock settings with OpenSearch enabled
+        mock_settings = MagicMock()
+        mock_settings.opensearch_enabled = True
+        mock_settings.opensearch_endpoint = 'https://test-opensearch.example.com'
+        mock_settings.opensearch_index_name = 'test-index'
+        mock_settings.opensearch_timeout = 30
+        mock_settings.opensearch_max_retries = 3
+        mock_settings.aws_access_key_id = 'test_key'
+        mock_settings.aws_secret_access_key = 'test_secret'
+        mock_settings.aws_region = 'ap-southeast-1'
+        
+        with patch('config.settings.settings', mock_settings):
+            with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
+                with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch', return_value=mock_client):
+                    loader = InternationalCompliancePatternLoader()
+                    loader.client = mock_client
+                    
+                    result = await loader.create_compliance_index()
+                    
+                    assert result is True
+                    mock_client.indices.create.assert_not_called()
         
         logger.info("✅ Test 22 passed: Index already exists")
     
@@ -509,14 +533,26 @@ class TestOpenSearchIndexCreation:
         mock_client.indices.exists.return_value = False
         mock_client.indices.create.side_effect = Exception("Index creation failed")
         
-        with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
-            with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch', return_value=mock_client):
-                loader = InternationalCompliancePatternLoader()
-                loader.client = mock_client
-                
-                result = await loader.create_compliance_index()
-                
-                assert result is False
+        # Mock settings with OpenSearch enabled
+        mock_settings = MagicMock()
+        mock_settings.opensearch_enabled = True
+        mock_settings.opensearch_endpoint = 'https://test-opensearch.example.com'
+        mock_settings.opensearch_index_name = 'test-index'
+        mock_settings.opensearch_timeout = 30
+        mock_settings.opensearch_max_retries = 3
+        mock_settings.aws_access_key_id = 'test_key'
+        mock_settings.aws_secret_access_key = 'test_secret'
+        mock_settings.aws_region = 'ap-southeast-1'
+        
+        with patch('config.settings.settings', mock_settings):
+            with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
+                with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch', return_value=mock_client):
+                    loader = InternationalCompliancePatternLoader()
+                    loader.client = mock_client
+                    
+                    result = await loader.create_compliance_index()
+                    
+                    assert result is False
         
         logger.info("✅ Test 23 passed: Index creation error")
 
@@ -537,27 +573,39 @@ class TestPatternLoadingToOpenSearch:
             {'id': 'PDPA_001', 'title': 'Test', 'content': 'Test content', 'category': 'test'}
         ]
         
-        with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
-            with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch', return_value=mock_client):
-                with patch('os.path.exists', return_value=True):
-                    loader = InternationalCompliancePatternLoader()
-                    loader.client = mock_client
-                    
-                    with patch.object(loader, 'load_json_file', return_value=mock_patterns):
-                        with patch.object(loader, 'process_pdpa_pattern') as mock_process:
-                            with patch.object(loader, 'process_gdpr_pattern') as mock_gdpr:
-                                mock_process.return_value = {
-                                    'compliance_id': 'PDPA_001',
-                                    'embedding': [0.1, 0.2, 0.3]
-                                }
-                                mock_gdpr.return_value = {
-                                    'compliance_id': 'GDPR_001',
-                                    'embedding': [0.4, 0.5, 0.6]
-                                }
-                                
-                                result = await loader.load_patterns_to_opensearch()
-                                
-                                assert result is True
+        # Mock settings with OpenSearch enabled
+        mock_settings = MagicMock()
+        mock_settings.opensearch_enabled = True
+        mock_settings.opensearch_endpoint = 'https://test-opensearch.example.com'
+        mock_settings.opensearch_index_name = 'test-index'
+        mock_settings.opensearch_timeout = 30
+        mock_settings.opensearch_max_retries = 3
+        mock_settings.aws_access_key_id = 'test_key'
+        mock_settings.aws_secret_access_key = 'test_secret'
+        mock_settings.aws_region = 'ap-southeast-1'
+        
+        with patch('config.settings.settings', mock_settings):
+            with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
+                with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch', return_value=mock_client):
+                    with patch('os.path.exists', return_value=True):
+                        loader = InternationalCompliancePatternLoader()
+                        loader.client = mock_client
+                        
+                        with patch.object(loader, 'load_json_file', return_value=mock_patterns):
+                            with patch.object(loader, 'process_pdpa_pattern') as mock_process:
+                                with patch.object(loader, 'process_gdpr_pattern') as mock_gdpr:
+                                    mock_process.return_value = {
+                                        'compliance_id': 'PDPA_001',
+                                        'embedding': [0.1, 0.2, 0.3]
+                                    }
+                                    mock_gdpr.return_value = {
+                                        'compliance_id': 'GDPR_001',
+                                        'embedding': [0.4, 0.5, 0.6]
+                                    }
+                                    
+                                    result = await loader.load_patterns_to_opensearch()
+                                    
+                                    assert result is True
         
         logger.info("✅ Test 24 passed: Load patterns success")
     
@@ -569,14 +617,26 @@ class TestPatternLoadingToOpenSearch:
         mock_client.indices.exists.return_value = False
         mock_client.indices.create.side_effect = Exception("Cannot create index")
         
-        with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
-            with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch', return_value=mock_client):
-                loader = InternationalCompliancePatternLoader()
-                loader.client = mock_client
-                
-                result = await loader.load_patterns_to_opensearch()
-                
-                assert result is False
+        # Mock settings with OpenSearch enabled
+        mock_settings = MagicMock()
+        mock_settings.opensearch_enabled = True
+        mock_settings.opensearch_endpoint = 'https://test-opensearch.example.com'
+        mock_settings.opensearch_index_name = 'test-index'
+        mock_settings.opensearch_timeout = 30
+        mock_settings.opensearch_max_retries = 3
+        mock_settings.aws_access_key_id = 'test_key'
+        mock_settings.aws_secret_access_key = 'test_secret'
+        mock_settings.aws_region = 'ap-southeast-1'
+        
+        with patch('config.settings.settings', mock_settings):
+            with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
+                with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch', return_value=mock_client):
+                    loader = InternationalCompliancePatternLoader()
+                    loader.client = mock_client
+                    
+                    result = await loader.load_patterns_to_opensearch()
+                    
+                    assert result is False
         
         logger.info("✅ Test 25 passed: Index creation failure")
 
@@ -606,16 +666,28 @@ class TestVectorSearch:
             }
         }
         
-        with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
-            with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch', return_value=mock_client):
-                loader = InternationalCompliancePatternLoader()
-                loader.client = mock_client
-                
-                with patch.object(loader, 'generate_embedding', return_value=[0.1, 0.2, 0.3]):
-                    result = await loader.test_pattern_search("data retention")
+        # Mock settings with OpenSearch enabled
+        mock_settings = MagicMock()
+        mock_settings.opensearch_enabled = True
+        mock_settings.opensearch_endpoint = 'https://test-opensearch.example.com'
+        mock_settings.opensearch_index_name = 'test-index'
+        mock_settings.opensearch_timeout = 30
+        mock_settings.opensearch_max_retries = 3
+        mock_settings.aws_access_key_id = 'test_key'
+        mock_settings.aws_secret_access_key = 'test_secret'
+        mock_settings.aws_region = 'ap-southeast-1'
+        
+        with patch('config.settings.settings', mock_settings):
+            with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
+                with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch', return_value=mock_client):
+                    loader = InternationalCompliancePatternLoader()
+                    loader.client = mock_client
                     
-                    assert result is True
-                    mock_client.search.assert_called_once()
+                    with patch.object(loader, 'generate_embedding', return_value=[0.1, 0.2, 0.3]):
+                        result = await loader.test_pattern_search("data retention")
+                        
+                        assert result is True
+                        mock_client.search.assert_called_once()
         
         logger.info("✅ Test 26 passed: Vector search success")
     
@@ -625,15 +697,27 @@ class TestVectorSearch:
         
         mock_client = MagicMock()
         
-        with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
-            with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch', return_value=mock_client):
-                loader = InternationalCompliancePatternLoader()
-                loader.client = mock_client
-                
-                with patch.object(loader, 'generate_embedding', return_value=[]):
-                    result = await loader.test_pattern_search("test query")
+        # Mock settings with OpenSearch enabled
+        mock_settings = MagicMock()
+        mock_settings.opensearch_enabled = True
+        mock_settings.opensearch_endpoint = 'https://test-opensearch.example.com'
+        mock_settings.opensearch_index_name = 'test-index'
+        mock_settings.opensearch_timeout = 30
+        mock_settings.opensearch_max_retries = 3
+        mock_settings.aws_access_key_id = 'test_key'
+        mock_settings.aws_secret_access_key = 'test_secret'
+        mock_settings.aws_region = 'ap-southeast-1'
+        
+        with patch('config.settings.settings', mock_settings):
+            with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
+                with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch', return_value=mock_client):
+                    loader = InternationalCompliancePatternLoader()
+                    loader.client = mock_client
                     
-                    assert result is False
+                    with patch.object(loader, 'generate_embedding', return_value=[]):
+                        result = await loader.test_pattern_search("test query")
+                        
+                        assert result is False
         
         logger.info("✅ Test 27 passed: Search without embedding")
     
@@ -644,15 +728,27 @@ class TestVectorSearch:
         mock_client = MagicMock()
         mock_client.search.side_effect = Exception("Search failed")
         
-        with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
-            with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch', return_value=mock_client):
-                loader = InternationalCompliancePatternLoader()
-                loader.client = mock_client
-                
-                with patch.object(loader, 'generate_embedding', return_value=[0.1, 0.2, 0.3]):
-                    result = await loader.test_pattern_search("test query")
+        # Mock settings with OpenSearch enabled
+        mock_settings = MagicMock()
+        mock_settings.opensearch_enabled = True
+        mock_settings.opensearch_endpoint = 'https://test-opensearch.example.com'
+        mock_settings.opensearch_index_name = 'test-index'
+        mock_settings.opensearch_timeout = 30
+        mock_settings.opensearch_max_retries = 3
+        mock_settings.aws_access_key_id = 'test_key'
+        mock_settings.aws_secret_access_key = 'test_secret'
+        mock_settings.aws_region = 'ap-southeast-1'
+        
+        with patch('config.settings.settings', mock_settings):
+            with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
+                with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch', return_value=mock_client):
+                    loader = InternationalCompliancePatternLoader()
+                    loader.client = mock_client
                     
-                    assert result is False
+                    with patch.object(loader, 'generate_embedding', return_value=[0.1, 0.2, 0.3]):
+                        result = await loader.test_pattern_search("test query")
+                        
+                        assert result is False
         
         logger.info("✅ Test 28 passed: Search error handling")
 
