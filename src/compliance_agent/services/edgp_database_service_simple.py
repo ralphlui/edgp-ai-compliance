@@ -58,37 +58,37 @@ class EDGPDatabaseService:
         port = getattr(settings, 'edgp_db_port', 3306)
         username = getattr(settings, 'edgp_db_username', None)
         password = getattr(settings, 'edgp_db_password', None)
-        secret_name = getattr(settings, 'edgp_db_secret_name', None)
-        database = getattr(settings, 'edgp_db_name', None)
+        # Use AWS RDS secret name for database credentials
+        secret_name = getattr(settings, 'aws_rds_secret_name', None)
+        database = getattr(settings, 'aws_rds_database', None) or getattr(settings, 'edgp_db_name', None)
         
         if not database:
             raise ValueError("EDGP_DB_NAME is required in environment configuration")
         
-        # Auto-detect if this is AWS RDS or local based on host and secret_name
-        is_aws_rds = False
+        # Check if AWS RDS and Secrets Manager are enabled in settings
+        aws_rds_enabled = bool(getattr(settings, 'aws_rds_enabled', False))
+        aws_secrets_enabled = bool(getattr(settings, 'aws_secrets_manager_enabled', False))
         
-        # Check if it's AWS RDS by looking for AWS RDS hostname pattern or secret name
-        if host and ('rds.amazonaws.com' in host or secret_name):
+        if aws_rds_enabled and aws_secrets_enabled and secret_name:
             is_aws_rds = True
             self.is_aws_rds = True
-            logger.info("AWS RDS mode detected")
+            logger.info("AWS RDS mode with Secrets Manager detected")
         else:
+            is_aws_rds = False
             self.is_aws_rds = False
             logger.info("Local MySQL mode detected")
         
         if is_aws_rds:
             # AWS RDS Configuration
-            if not host:
-                raise ValueError("EDGP_DB_HOST is required for AWS RDS connection")
-            
             if secret_name:
                 # Use AWS Secrets Manager
                 logger.info(f"Using AWS Secrets Manager for credentials: {secret_name}")
                 region = getattr(settings, 'aws_region', 'ap-southeast-1')
                 
                 # Get credentials from Secrets Manager
+                # Host and port will come from the secret if not provided in env
                 config = AWSRDSConfig.build_connection_config(
-                    host=host,
+                    host=host or "placeholder",  # Will be replaced by value from secret
                     port=port,
                     database=database,
                     secret_name=secret_name,
@@ -109,7 +109,7 @@ class EDGPDatabaseService:
                     self.is_aws_rds = False
                     raise Exception(f"Database configuration failed: Unable to load credentials from Secrets Manager: {exc}")
                 
-            elif username and password:
+            elif username and password and host:
                 # Use direct credentials for AWS RDS
                 logger.info("Using direct credentials for AWS RDS connection")
                 config = AWSRDSConfig.build_connection_config(
@@ -121,7 +121,7 @@ class EDGPDatabaseService:
                     use_secrets_manager=False
                 )
             else:
-                raise ValueError("Either EDGP_DB_SECRET_NAME or EDGP_DB_USERNAME/EDGP_DB_PASSWORD must be provided for AWS RDS")
+                raise ValueError("Either EDGP_DB_SECRET_NAME must be provided for AWS RDS (preferred) or EDGP_DB_HOST/EDGP_DB_USERNAME/EDGP_DB_PASSWORD for direct credentials")
             
             # Validate the configuration
             RDSConnectionValidator.validate_config(config)
@@ -145,7 +145,39 @@ class EDGPDatabaseService:
                 'autocommit': True
             }
         
-        logger.info(f"Database config built: host={config['host']}, database={config['db']}, aws_rds={self.is_aws_rds}")
+        # Log detailed connection information
+        connection_host = config['host']
+        connection_user = config.get('user', config.get('username', 'Unknown'))
+        connection_db = config['db']
+        connection_port = config.get('port', 3306)
+        
+        # Use both logging and print statements to ensure visibility
+        print("=" * 80)
+        print("📊 DATABASE CONNECTION CONFIGURATION")
+        print("=" * 80)
+        print(f"🏠 Host: {connection_host}")
+        print(f"⚡ Port: {connection_port}")
+        print(f"👤 Username: {connection_user}")
+        print(f"🗄️  Database: {connection_db}")
+        print(f"☁️  AWS RDS Mode: {self.is_aws_rds}")
+        print(f"🔐 Secret Manager: {'Yes' if secret_name else 'No'}")
+        if secret_name:
+            print(f"🔑 Secret Name: {secret_name}")
+        print("=" * 80)
+        
+        logger.info("=" * 80)
+        logger.info("📊 DATABASE CONNECTION CONFIGURATION")
+        logger.info("=" * 80)
+        logger.info(f"🏠 Host: {connection_host}")
+        logger.info(f"⚡ Port: {connection_port}")
+        logger.info(f"👤 Username: {connection_user}")
+        logger.info(f"🗄️  Database: {connection_db}")
+        logger.info(f"☁️  AWS RDS Mode: {self.is_aws_rds}")
+        logger.info(f"🔐 Secret Manager: {'Yes' if secret_name else 'No'}")
+        if secret_name:
+            logger.info(f"🔑 Secret Name: {secret_name}")
+        logger.info("=" * 80)
+        
         return config
     
     async def initialize(self):
@@ -167,8 +199,36 @@ class EDGPDatabaseService:
                 )
                 await self._test_connection()
                 
+                # Log successful connection details
+                host = self.connection_config['host']
+                user = self.connection_config.get('user', self.connection_config.get('username', 'Unknown'))
+                database = self.connection_config['db']
+                port = self.connection_config.get('port', 3306)
+                
                 connection_type = "AWS RDS" if self.is_aws_rds else "Local MySQL"
-                logger.info(f"EDGP Database Service initialized successfully with {connection_type}")
+                
+                # Use both logging and print statements to ensure visibility
+                print("=" * 80)
+                print("✅ DATABASE CONNECTION ESTABLISHED")
+                print("=" * 80)
+                print(f"🏠 Connected Host: {host}")
+                print(f"⚡ Connected Port: {port}")
+                print(f"👤 Connected Username: {user}")
+                print(f"🗄️  Connected Database: {database}")
+                print(f"☁️  Connection Type: {connection_type}")
+                print(f"🔗 Pool Size: {1}-{10 if self.is_aws_rds else 5} connections")
+                print("=" * 80)
+                
+                logger.info("=" * 80)
+                logger.info("✅ DATABASE CONNECTION ESTABLISHED")
+                logger.info("=" * 80)
+                logger.info(f"🏠 Connected Host: {host}")
+                logger.info(f"⚡ Connected Port: {port}")
+                logger.info(f"👤 Connected Username: {user}")
+                logger.info(f"🗄️  Connected Database: {database}")
+                logger.info(f"☁️  Connection Type: {connection_type}")
+                logger.info(f"🔗 Pool Size: {1}-{10 if self.is_aws_rds else 5} connections")
+                logger.info("=" * 80)
                 
             except Exception as db_error:
                 logger.error(f"Could not connect to database: {db_error}")
@@ -196,6 +256,23 @@ class EDGPDatabaseService:
         """Get all customers from the database or mock data for testing"""
         
         if self.pool:
+            # Display database connection details during customer retrieval
+            connection_host = self.connection_config.get('host', 'Unknown')
+            connection_port = self.connection_config.get('port', 'Unknown')
+            connection_user = self.connection_config.get('user', self.connection_config.get('username', 'Unknown'))
+            connection_db = self.connection_config.get('db', 'Unknown')
+            
+            print(f"=== Database Connection Details for Customer Query ===")
+            print(f"Database Host: {connection_host}")
+            print(f"Database Port: {connection_port}")
+            print(f"Database User: {connection_user}")
+            print(f"Database Name: {connection_db}")
+            print(f"AWS RDS Mode: {'Enabled' if getattr(self, 'is_aws_rds', False) else 'Disabled'}")
+            print(f"Connection Pool Size: {self.pool.maxsize if hasattr(self.pool, 'maxsize') else 'Unknown'}")
+            print("=====================================================")
+            
+            logger.info(f"Querying customers from DB - Host: {connection_host}, Port: {connection_port}, User: {connection_user}, Database: {connection_db}")
+            
             # Real database query
             try:
                 async with self.pool.acquire() as conn:

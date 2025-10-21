@@ -134,9 +134,19 @@ class InternationalAIComplianceAgent:
         self.ai_analyzer = AIComplianceAnalyzer()
         self.remediation_service = ComplianceRemediationService()
 
-        # OpenAI API key - fetch from Secrets Manager
+        # OpenAI API key - fetch from Secrets Manager using same path as database
         from src.compliance_agent.services.ai_secrets_service import get_openai_api_key
-        api_key = get_openai_api_key()
+        from config.settings import settings
+        
+        # Use the same secret path as database credentials
+        secret_name = getattr(settings, 'aws_secret_name', None)
+        if secret_name:
+            logger.info(f"Retrieving OpenAI API key from AWS Secrets Manager: {secret_name}")
+            api_key = get_openai_api_key(secret_name)
+        else:
+            logger.info("Retrieving OpenAI API key from AWS Secrets Manager (default)")
+            api_key = get_openai_api_key()
+            
         if api_key:
             openai.api_key = api_key
             logger.info("OpenAI API key configured successfully for compliance agent")
@@ -258,7 +268,14 @@ class InternationalAIComplianceAgent:
     async def initialize(self) -> bool:
         """Initialize all services."""
         try:
+            print("🔧 Starting International AI Agent initialization...")
             await self.db_service.initialize()
+            
+            # Initialize AI analyzer with LLM service using same secret as database
+            from config.settings import settings
+            secret_name = getattr(settings, 'aws_secret_name', None)
+            print(f"🤖 Initializing AI analyzer with secret: {secret_name}")
+            await self.ai_analyzer.initialize(secret_name)
             
             # Load compliance patterns from JSON files
             await self.load_compliance_patterns()
@@ -266,10 +283,14 @@ class InternationalAIComplianceAgent:
             logger.info("International AI Compliance Agent initialized", 
                        frameworks=list(self.compliance_frameworks.keys()),
                        opensearch_enabled=self.opensearch_enabled,
-                       compliance_patterns_loaded=True)
+                       compliance_patterns_loaded=True,
+                       llm_enabled=self.ai_analyzer.llm_service.is_initialized)
+            
+            print(f"✅ International AI Agent initialized with LLM: {self.ai_analyzer.llm_service.is_initialized}")
             return True
         except Exception as e:
             logger.error("Failed to initialize compliance agent", error=str(e))
+            print(f"❌ Failed to initialize International AI Agent: {str(e)}")
             return False
     
     async def scan_customer_compliance(self) -> List[InternationalComplianceViolation]:
@@ -287,7 +308,17 @@ class InternationalAIComplianceAgent:
                        frameworks=["PDPA", "GDPR"])
             
             # 1. Read all customer data from database
+            print("---scan the records on Database retrieved")
+            print(f"🔍 Database Connection Details:")
+            if hasattr(self.db_service, 'connection_config') and self.db_service.connection_config:
+                config = self.db_service.connection_config
+                print(f"   🏠 Host: {config.get('host', 'Unknown')}")
+                print(f"   👤 User: {config.get('user', config.get('username', 'Unknown'))}")
+                print(f"   🗄️  Database: {config.get('db', 'Unknown')}")
+                print(f"   ☁️  RDS Mode: {getattr(self.db_service, 'is_aws_rds', False)}")
+            
             customers = await self.db_service.get_customers()
+            print(f"✅ Successfully retrieved {len(customers)} customer records from database")
             logger.info("Retrieved customer records for analysis", 
                        record_count=len(customers),
                        data_governance_scope="customer_retention")
@@ -373,7 +404,11 @@ class InternationalAIComplianceAgent:
                         'has_phone': bool(customer.phone),
                         'is_archived': customer.is_archived,
                         'domain': customer.domain_name,
-                        'data_age_days': data_age
+                        'data_age_days': data_age,
+                        'legal_reference': analysis_result.get('legal_reference', 'Data Protection Act'),
+                        'urgency_level': analysis_result.get('urgency_level', 'HIGH'),
+                        'compliance_impact': analysis_result.get('compliance_impact', 'Regulatory risk'),
+                        'ai_powered': analysis_result.get('ai_powered', False)
                     }
                 )
                 
@@ -384,6 +419,21 @@ class InternationalAIComplianceAgent:
                              severity=violation.severity,
                              excess_days=data_age - retention_limit,
                              confidence=violation.confidence_score)
+                
+                # Log LLM-enhanced violation details
+                if analysis_result.get('ai_powered', False):
+                    logger.info("🤖 AI-ENHANCED VIOLATION ANALYSIS")
+                    logger.info(f"🔍 AI Description: {analysis_result.get('description', 'N/A')[:200]}...")
+                    logger.info(f"🔧 AI Recommendation: {analysis_result.get('recommended_action', 'N/A')[:200]}...")
+                    logger.info(f"📚 Legal Reference: {analysis_result.get('legal_reference', 'N/A')}")
+                    logger.info(f"⚡ Urgency Level: {analysis_result.get('urgency_level', 'N/A')}")
+                    logger.info(f"⚠️ Compliance Impact: {analysis_result.get('compliance_impact', 'N/A')[:150]}...")
+                    
+                    # Console output for immediate visibility
+                    print(f"🤖 AI-ENHANCED VIOLATION FOR CUSTOMER {customer_hash}")
+                    print(f"📝 AI Description: {analysis_result.get('description', 'N/A')[:100]}...")
+                    print(f"🔧 AI Action: {analysis_result.get('recommended_action', 'N/A')[:100]}...")
+                    print(f"📚 Legal Ref: {analysis_result.get('legal_reference', 'N/A')}")
                 
                 return violation
             
@@ -410,6 +460,7 @@ class InternationalAIComplianceAgent:
         
         # Prepare context for analysis
         analysis_context = {
+            "customer_id": customer.id,  # Add customer ID to context
             "data_age_days": data_age,
             "retention_limit_days": retention_limit,
             "excess_days": data_age - retention_limit,
@@ -453,14 +504,21 @@ class InternationalAIComplianceAgent:
             # Generate AI-enhanced description using patterns
             description = await self._generate_pattern_description(context, relevant_patterns, framework)
             
+            # Generate LLM-powered compliance suggestions
+            llm_suggestions = await self._generate_llm_suggestions(context, framework)
+            
             return {
                 'framework': framework,
                 'region': region,
                 'severity': severity,
-                'description': description,
+                'description': llm_suggestions.get('description', description),
                 'matching_patterns': relevant_patterns,
                 'confidence_score': 0.8,  # High confidence for JSON pattern matching
-                'recommended_action': f"Delete customer data immediately - exceeds {framework} retention requirements by {excess_days} days"
+                'recommended_action': llm_suggestions.get('recommendation', f"Delete customer data immediately - exceeds {framework} retention requirements by {excess_days} days"),
+                'legal_reference': llm_suggestions.get('legal_reference', f"{framework} Data Protection Requirements"),
+                'urgency_level': llm_suggestions.get('urgency_level', 'HIGH'),
+                'compliance_impact': llm_suggestions.get('compliance_impact', 'Regulatory compliance risk'),
+                'ai_powered': True  # Flag to indicate LLM enhancement
             }
             
         except Exception as e:
@@ -553,6 +611,48 @@ Provide a concise compliance violation description in 1-2 sentences.
         except Exception as e:
             logger.error("Failed to generate pattern description", error=str(e))
             return f"Customer data exceeds {framework} retention period by {context['excess_days']} days"
+    
+    async def _generate_llm_suggestions(self, context: Dict[str, Any], framework: str) -> Dict[str, str]:
+        """Generate comprehensive LLM-powered compliance suggestions"""
+        try:
+            # Prepare violation data for LLM analysis
+            violation_data = {
+                'customer_id': context.get('customer_id', 'Unknown'),
+                'data_age_days': context.get('data_age_days', 0),
+                'excess_days': context.get('excess_days', 0),
+                'retention_limit_days': context.get('retention_limit_days', 0),
+                'is_archived': context.get('is_archived', False),
+                'violation_type': 'DATA_RETENTION_EXCEEDED',
+                'framework': framework,
+                'region': context.get('application_region', 'Singapore')
+            }
+            
+            # Get LLM-powered suggestions
+            suggestions = await self.ai_analyzer.generate_violation_suggestions(violation_data, framework)
+            
+            logger.info(f"🤖 Generated LLM compliance suggestions for {framework} violation")
+            logger.info(f"🔧 LLM Recommendation: {suggestions.get('recommendation', 'N/A')[:100]}...")
+            logger.info(f"📚 Legal Reference: {suggestions.get('legal_reference', 'N/A')}")
+            logger.info(f"⚠️ Urgency Level: {suggestions.get('urgency_level', 'N/A')}")
+            
+            # Also add console output for immediate visibility
+            print(f"🤖 LLM SUGGESTION FOR CUSTOMER {violation_data.get('customer_id', 'Unknown')}")
+            print(f"📝 Description: {suggestions.get('description', 'N/A')[:150]}...")
+            print(f"🔧 Recommendation: {suggestions.get('recommendation', 'N/A')[:150]}...")
+            print(f"📚 Legal Reference: {suggestions.get('legal_reference', 'N/A')}")
+            
+            return suggestions
+            
+        except Exception as e:
+            logger.error(f"Failed to generate LLM suggestions: {str(e)}")
+            # Return fallback suggestions
+            return {
+                'description': f"Customer data exceeds {framework} retention period by {context.get('excess_days', 0)} days",
+                'recommendation': f"Immediately delete or anonymize customer data that exceeds {framework} retention requirements",
+                'legal_reference': f"{framework} Data Protection Regulations",
+                'urgency_level': 'HIGH',
+                'compliance_impact': 'Regulatory compliance risk'
+            }
     
     async def _get_opensearch_pattern_analysis(self, context: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Use OpenSearch to find matching compliance patterns."""
@@ -700,18 +800,31 @@ Provide a concise compliance violation description in 1-2 sentences.
         """
         try:
             remediation_request = {
+                # Map fields to remediation service expected format
+                "id": str(violation.customer_id),  # Customer ID for the main identifier
+                "action": "delete",  # Action to take
+                "message": f"Customer data retention exceeded by {violation.data_age_days - violation.retention_limit_days} days under {violation.framework} {violation.raw_data_summary.get('legal_reference', 'Article 17')}",
+                "field_name": "created_date",  # Field being remediated
+                "domain_name": "customer",  # Domain being affected
+                "framework": violation.framework.lower() + "_eu" if violation.framework == "GDPR" else "pdpa_singapore",
+                "urgency": violation.severity.lower(),  # Map severity to urgency
+                "user_id": str(violation.customer_id),  # User ID being affected
+                
+                # Additional metadata for compliance tracking
                 "violation_id": f"INTL_{violation.customer_hash}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
                 "customer_hash": violation.customer_hash,  # Masked ID
                 "violation_type": violation.violation_type,
-                "framework": violation.framework,
                 "region": violation.region,
-                "severity": violation.severity,
                 "description": violation.description,
                 "recommended_action": violation.recommended_action,
                 "data_age_days": violation.data_age_days,
                 "retention_limit_days": violation.retention_limit_days,
                 "confidence_score": violation.confidence_score,
                 "matching_patterns_count": len(violation.matching_patterns),
+                "legal_reference": violation.raw_data_summary.get('legal_reference', 'Data Protection Act'),
+                "urgency_level": violation.raw_data_summary.get('urgency_level', 'HIGH'),
+                "compliance_impact": violation.raw_data_summary.get('compliance_impact', 'Regulatory risk'),
+                "ai_powered": violation.raw_data_summary.get('ai_powered', False),
                 "timestamp": datetime.now().isoformat()
             }
             
@@ -720,15 +833,24 @@ Provide a concise compliance violation description in 1-2 sentences.
                 logger.info("=" * 80)
                 logger.info("🌍 INTERNATIONAL COMPLIANCE REMEDIATION REQUEST")
                 logger.info("=" * 80)
-                logger.info(f"🆔 Violation ID: {remediation_request['violation_id']}")
-                logger.info(f"👤 Customer Hash: {remediation_request['customer_hash']}")
-                logger.info(f"⚠️  Violation Type: {remediation_request['violation_type']}")
+                logger.info(f"🆔 Request ID: {remediation_request['id']}")
+                logger.info(f"👤 Customer ID: {remediation_request['user_id']}")
+                logger.info(f"� Customer Hash: {remediation_request['customer_hash']}")
+                logger.info(f"⚡ Action: {remediation_request['action']}")
+                logger.info(f"📝 Message: {remediation_request['message']}")
+                logger.info(f"🏷️  Field Name: {remediation_request['field_name']}")
+                logger.info(f"🏢 Domain: {remediation_request['domain_name']}")
                 logger.info(f"⚖️  Framework: {remediation_request['framework']}")
+                logger.info(f"🚨 Urgency: {remediation_request['urgency']}")
+                logger.info(f"⚠️  Violation Type: {remediation_request['violation_type']}")
                 logger.info(f"🌍 Region: {remediation_request['region']}")
-                logger.info(f"🚨 Severity: {remediation_request['severity']}")
-                logger.info(f"📝 Description: {remediation_request['description']}")
-                logger.info(f"🔧 Recommended Action: {remediation_request['recommended_action']}")
-                logger.info(f"📅 Data Age: {remediation_request['data_age_days']} days")
+                logger.info(f"� Description: {remediation_request['description'][:100]}...")
+                logger.info(f"🔧 Recommended Action: {remediation_request['recommended_action'][:100]}...")
+                logger.info(f"� Legal Reference: {remediation_request['legal_reference']}")
+                logger.info(f"⚡ Urgency Level: {remediation_request['urgency_level']}")
+                logger.info(f"⚠️ Compliance Impact: {remediation_request['compliance_impact']}")
+                logger.info(f"🤖 AI-Powered Analysis: {'Yes' if remediation_request['ai_powered'] else 'No'}")
+                logger.info(f"�📅 Data Age: {remediation_request['data_age_days']} days")
                 logger.info(f"⏰ Retention Limit: {remediation_request['retention_limit_days']} days")
                 logger.info(f"🎯 Confidence Score: {remediation_request['confidence_score']}")
                 logger.info(f"📊 Matching Patterns: {remediation_request['matching_patterns_count']}")

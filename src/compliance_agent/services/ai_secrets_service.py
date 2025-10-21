@@ -112,9 +112,9 @@ class AISecretsManager:
             return env_key
 
         # Try to get from Secrets Manager
-        secret_name = secret_name or os.getenv("AI_SECRET_NAME")
+        secret_name = secret_name or os.getenv("AI_SECRET_NAME") or os.getenv("AWS_SECRET_NAME")
         if not secret_name:
-            logger.warning("No AI_SECRET_NAME configured, cannot fetch from Secrets Manager")
+            logger.warning("No AI_SECRET_NAME or AWS_SECRET_NAME configured, cannot fetch from Secrets Manager")
             return None
 
         try:
@@ -140,7 +140,7 @@ class AISecretsManager:
         """Check if the value is a placeholder and not a real API key"""
         placeholder_patterns = [
             "placeholder",
-            "your_key_here",
+            "your_key_here", 
             "api_key_here",
             "openai_api_key_here",
             "ai_agent_api_key_here",
@@ -148,6 +148,7 @@ class AISecretsManager:
             "sit_ai_agent",
             "test-key",
             "xxx",
+            "will_use_secrets_manager",  # Our new placeholder pattern
         ]
 
         value_lower = value.lower()
