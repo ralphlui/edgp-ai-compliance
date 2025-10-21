@@ -247,19 +247,35 @@ class InternationalAIComplianceAgent:
     def _setup_opensearch(self):
         """Setup OpenSearch connection for compliance pattern matching."""
         try:
-            # Temporarily disabled OpenSearch due to import issues
-            # AWS credentials would be loaded here
-            self.aws_access_key = os.getenv('AWS_ACCESS_KEY_ID')
-            self.aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-            self.aws_region = os.getenv('AWS_REGION', 'ap-southeast-1')
-            
-            # OpenSearch settings would be configured here
-            self.opensearch_endpoint = os.getenv('OPENSEARCH_ENDPOINT')
-            self.compliance_index = 'international-compliance-patterns'
-            
-            # Disable OpenSearch for now until dependencies are resolved
-            self.opensearch_enabled = False
-            logger.warning("OpenSearch temporarily disabled - using basic compliance checking")
+            # Import settings for OpenSearch configuration
+            try:
+                from config.settings import settings
+                self.opensearch_enabled = settings.opensearch_enabled
+                self.opensearch_endpoint = settings.opensearch_endpoint
+                self.compliance_index = settings.opensearch_index_name
+                
+                # AWS credentials
+                self.aws_access_key = settings.aws_access_key_id or os.getenv('AWS_ACCESS_KEY_ID')
+                self.aws_secret_key = settings.aws_secret_access_key or os.getenv('AWS_SECRET_ACCESS_KEY')
+                self.aws_region = settings.aws_region or os.getenv('AWS_REGION', 'ap-southeast-1')
+                
+                if self.opensearch_enabled:
+                    logger.info(f"✅ OpenSearch enabled for compliance patterns (index: {self.compliance_index})")
+                else:
+                    logger.warning("OpenSearch disabled in settings - using JSON file compliance checking")
+            except ImportError:
+                # Fallback if settings not available
+                self.aws_access_key = os.getenv('AWS_ACCESS_KEY_ID')
+                self.aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+                self.aws_region = os.getenv('AWS_REGION', 'ap-southeast-1')
+                self.opensearch_endpoint = os.getenv('OPENSEARCH_ENDPOINT')
+                self.compliance_index = os.getenv('OPENSEARCH_INDEX_NAME', 'international-compliance-patterns')
+                self.opensearch_enabled = os.getenv('OPENSEARCH_ENABLED', 'false').lower() == 'true'
+                
+                if self.opensearch_enabled:
+                    logger.info(f"✅ OpenSearch enabled from env (index: {self.compliance_index})")
+                else:
+                    logger.warning("OpenSearch disabled - using JSON file compliance checking")
                 
         except Exception as e:
             logger.error("Failed to setup OpenSearch", error=str(e))
