@@ -139,6 +139,13 @@ class Settings(BaseSettings):
     sqs_receive_message_wait_time: int = Field(default=20, ge=0, le=20)
     sqs_max_receive_count: int = Field(default=3, ge=1, le=1000)
 
+    # AWS OpenSearch Configuration
+    opensearch_enabled: bool = Field(default=True, env="OPENSEARCH_ENABLED", description="Enable OpenSearch for compliance patterns")
+    opensearch_endpoint: Optional[str] = Field(default=None, env="OPENSEARCH_ENDPOINT", description="OpenSearch endpoint URL")
+    opensearch_index_name: str = Field(default="edgp-compliance-info", env="OPENSEARCH_INDEX_NAME", description="OpenSearch index name")
+    opensearch_timeout: int = Field(default=30, ge=5, le=300, env="OPENSEARCH_TIMEOUT", description="OpenSearch request timeout in seconds")
+    opensearch_max_retries: int = Field(default=3, ge=1, le=10, env="OPENSEARCH_MAX_RETRIES", description="OpenSearch max retries")
+
     # Health Check
     health_check_interval: int = Field(default=30, ge=5, description="Health check interval in seconds")
 

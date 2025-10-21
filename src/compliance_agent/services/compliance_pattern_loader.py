@@ -37,14 +37,46 @@ class InternationalCompliancePatternLoader:
     """
     
     def __init__(self):
+        # Import settings
+        try:
+            from config.settings import settings
+            self.settings = settings
+        except ImportError:
+            self.settings = None
+            logger.warning("Settings not available, using environment variables only")
+        
+        # Check if OpenSearch is enabled
+        if self.settings and hasattr(self.settings, 'opensearch_enabled'):
+            self.opensearch_enabled = self.settings.opensearch_enabled
+        else:
+            self.opensearch_enabled = os.getenv('OPENSEARCH_ENABLED', 'true').lower() == 'true'
+        
+        if not self.opensearch_enabled:
+            logger.info("OpenSearch is disabled - pattern loader will not initialize")
+            self.client = None
+            return
+        
         # AWS credentials for OpenSearch
-        self.aws_access_key = os.getenv('AWS_ACCESS_KEY_ID')
-        self.aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-        self.aws_region = os.getenv('AWS_REGION', 'ap-southeast-1')
+        if self.settings:
+            self.aws_access_key = self.settings.aws_access_key_id or os.getenv('AWS_ACCESS_KEY_ID')
+            self.aws_secret_key = self.settings.aws_secret_access_key or os.getenv('AWS_SECRET_ACCESS_KEY')
+            self.aws_region = self.settings.aws_region or os.getenv('AWS_REGION', 'ap-southeast-1')
+        else:
+            self.aws_access_key = os.getenv('AWS_ACCESS_KEY_ID')
+            self.aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+            self.aws_region = os.getenv('AWS_REGION', 'ap-southeast-1')
 
         # OpenSearch configuration
-        self.opensearch_endpoint = os.getenv('OPENSEARCH_ENDPOINT')
-        self.compliance_index = 'international-compliance-patterns'
+        if self.settings and hasattr(self.settings, 'opensearch_endpoint'):
+            self.opensearch_endpoint = self.settings.opensearch_endpoint or os.getenv('OPENSEARCH_ENDPOINT')
+            self.compliance_index = self.settings.opensearch_index_name or 'international-compliance-patterns'
+            self.timeout = self.settings.opensearch_timeout or 30
+            self.max_retries = self.settings.opensearch_max_retries or 3
+        else:
+            self.opensearch_endpoint = os.getenv('OPENSEARCH_ENDPOINT')
+            self.compliance_index = os.getenv('OPENSEARCH_INDEX_NAME', 'international-compliance-patterns')
+            self.timeout = int(os.getenv('OPENSEARCH_TIMEOUT', '30'))
+            self.max_retries = int(os.getenv('OPENSEARCH_MAX_RETRIES', '3'))
 
         # OpenAI API key - fetch from Secrets Manager
         from src.compliance_agent.services.ai_secrets_service import get_openai_api_key
@@ -68,17 +100,21 @@ class InternationalCompliancePatternLoader:
         # Initialize OpenSearch client
         if self.opensearch_endpoint:
             self.host = self.opensearch_endpoint.replace('https://', '').replace('http://', '')
+            logger.info(f"Initializing OpenSearch client for {self.host}")
+            logger.info(f"Using index: {self.compliance_index}")
             self.client = OpenSearch(
                 hosts=[{'host': self.host, 'port': 443}],
                 http_auth=self.awsauth,
                 use_ssl=True,
                 verify_certs=True,
                 connection_class=RequestsHttpConnection,
-                timeout=30,
-                max_retries=3
+                timeout=self.timeout,
+                max_retries=self.max_retries
             )
+            logger.info("✅ OpenSearch client initialized successfully")
         else:
-            raise ValueError("OPENSEARCH_ENDPOINT not configured")
+            logger.warning("OPENSEARCH_ENDPOINT not configured - OpenSearch features will be disabled")
+            self.client = None
     
     def load_json_file(self, file_path: str) -> List[Dict[str, Any]]:
         """Load compliance patterns from JSON file."""

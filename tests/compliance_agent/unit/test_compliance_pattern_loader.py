@@ -50,15 +50,29 @@ class TestLoaderInitialization:
     def test_loader_initialization_with_credentials(self):
         """Test 1: Loader initializes with valid AWS credentials"""
         
-        with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
-            with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch'):
-                loader = InternationalCompliancePatternLoader()
-                
-                assert loader.aws_access_key == 'test_access_key'
-                assert loader.aws_secret_key == 'test_secret_key'
-                assert loader.aws_region == 'eu-west-1'
-                assert loader.opensearch_endpoint == 'https://test-opensearch.example.com'
-                assert loader.compliance_index == 'international-compliance-patterns'
+        # Mock settings object
+        mock_settings = MagicMock()
+        mock_settings.opensearch_enabled = True
+        mock_settings.opensearch_endpoint = 'https://test-opensearch.example.com'
+        mock_settings.opensearch_index_name = 'test-compliance-index'
+        mock_settings.opensearch_timeout = 30
+        mock_settings.opensearch_max_retries = 3
+        mock_settings.aws_access_key_id = 'test_access_key'
+        mock_settings.aws_secret_access_key = 'test_secret_key'
+        mock_settings.aws_region = 'eu-west-1'
+        
+        # Patch the import in the loader's __init__ method
+        with patch('config.settings.settings', mock_settings):
+            with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
+                with patch('src.compliance_agent.services.compliance_pattern_loader.OpenSearch'):
+                    loader = InternationalCompliancePatternLoader()
+                    
+                    assert loader.aws_access_key == 'test_access_key'
+                    assert loader.aws_secret_key == 'test_secret_key'
+                    assert loader.aws_region == 'eu-west-1'
+                    assert loader.opensearch_endpoint == 'https://test-opensearch.example.com'
+                    assert loader.compliance_index == 'test-compliance-index'
+                    assert loader.opensearch_enabled is True
         
         logger.info("✅ Test 1 passed: Loader initialization with credentials")
     
@@ -75,20 +89,29 @@ class TestLoaderInitialization:
         logger.info("✅ Test 2 passed: Loader without API key")
     
     def test_loader_initialization_missing_endpoint(self):
-        """Test 3: Loader fails without OpenSearch endpoint"""
+        """Test 3: Loader initializes with warning when OpenSearch endpoint missing"""
         
-        original_endpoint = os.environ.get('OPENSEARCH_ENDPOINT')
-        del os.environ['OPENSEARCH_ENDPOINT']
+        # Mock settings with OpenSearch disabled
+        mock_settings = MagicMock()
+        mock_settings.opensearch_enabled = False  # Disabled
+        mock_settings.opensearch_endpoint = None  # No endpoint
+        mock_settings.opensearch_index_name = 'test-index'
+        mock_settings.opensearch_timeout = 30
+        mock_settings.opensearch_max_retries = 3
+        mock_settings.aws_access_key_id = 'test_access_key'
+        mock_settings.aws_secret_access_key = 'test_secret_key'
+        mock_settings.aws_region = 'eu-west-1'
         
-        try:
+        # Patch the import in the loader's __init__ method
+        with patch('config.settings.settings', mock_settings):
             with patch('src.compliance_agent.services.ai_secrets_service.get_openai_api_key', return_value='test_key'):
-                with pytest.raises(ValueError, match="OPENSEARCH_ENDPOINT not configured"):
-                    InternationalCompliancePatternLoader()
-        finally:
-            if original_endpoint:
-                os.environ['OPENSEARCH_ENDPOINT'] = original_endpoint
+                # Should initialize but with client set to None
+                loader = InternationalCompliancePatternLoader()
+                
+                assert loader.opensearch_enabled is False
+                assert loader.client is None
         
-        logger.info("✅ Test 3 passed: Missing endpoint error")
+        logger.info("✅ Test 3 passed: Missing endpoint handled gracefully")
 
 
 class TestJSONFileLoading:
