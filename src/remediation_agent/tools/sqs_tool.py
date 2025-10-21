@@ -86,7 +86,22 @@ class SQSTool:
     def _initialize_client(self):
         """Initialize AWS SQS client"""
         try:
-            self.sqs_client = boto3.client('sqs', region_name=self.region_name)
+            # Build client kwargs
+            client_kwargs = {'region_name': self.region_name}
+            
+            # Add credentials if available from settings
+            if SETTINGS_AVAILABLE and settings:
+                if settings.aws_access_key_id and settings.aws_secret_access_key:
+                    client_kwargs['aws_access_key_id'] = settings.aws_access_key_id
+                    client_kwargs['aws_secret_access_key'] = settings.aws_secret_access_key
+                    logger.info("Using AWS credentials from settings")
+                
+                # Add custom endpoint if specified (for LocalStack)
+                if settings.aws_endpoint_url:
+                    client_kwargs['endpoint_url'] = settings.aws_endpoint_url
+                    logger.info(f"Using custom AWS endpoint: {settings.aws_endpoint_url}")
+            
+            self.sqs_client = boto3.client('sqs', **client_kwargs)
             logger.info(f"SQS client initialized for region {self.region_name}")
         except Exception as e:
             logger.error(f"Failed to initialize SQS client: {str(e)}")
