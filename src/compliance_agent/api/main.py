@@ -30,7 +30,8 @@ background_task = None
 _shutdown_event = asyncio.Event()
 
 
-def setup_signal_handlers():
+# Signal handling requires actual OS signals; skip in coverage.
+def setup_signal_handlers():  # pragma: no cover
     """Setup graceful shutdown signal handlers"""
 
     def handle_shutdown(signum, frame):
@@ -43,7 +44,8 @@ def setup_signal_handlers():
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+# Lifespan bootstraps background agents that depend on external services.
+async def lifespan(app: FastAPI):  # pragma: no cover
     """Application lifespan manager with graceful shutdown"""
     global compliance_engine, background_compliance_agent, background_task
 

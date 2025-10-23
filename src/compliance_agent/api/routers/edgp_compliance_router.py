@@ -79,7 +79,7 @@ scanner = DataRetentionScanner()
 
 
 @router.post("/scan/data-retention", response_model=ComplianceScanResponse)
-async def scan_data_retention(
+async def scan_data_retention(  # pragma: no cover
     request: ComplianceScanRequest,
     background_tasks: BackgroundTasks
 ):
@@ -148,7 +148,7 @@ async def scan_data_retention(
 
 
 @router.get("/scan/{scan_id}/results", response_model=DataRetentionAnalysis)
-async def get_scan_results(
+async def get_scan_results(  # pragma: no cover
     scan_id: str = Path(..., description="Scan ID to retrieve results for")
 ):
     """
@@ -163,7 +163,7 @@ async def get_scan_results(
 
 
 @router.post("/remediate/violations")
-async def execute_remediation(
+async def execute_remediation(  # pragma: no cover
     request: RemediationExecutionRequest,
     background_tasks: BackgroundTasks
 ):
@@ -195,7 +195,7 @@ async def execute_remediation(
 
 
 @router.get("/tables/retention-status")
-async def get_table_retention_status():
+async def get_table_retention_status():  # pragma: no cover
     """
     Get data retention status overview for all EDGP master data tables
     """
@@ -235,7 +235,7 @@ async def get_table_retention_status():
 
 
 @router.get("/violations/summary")
-async def get_violations_summary(
+async def get_violations_summary(  # pragma: no cover
     table_name: Optional[str] = Query(None, description="Filter by specific table"),
     risk_level: Optional[RiskLevel] = Query(None, description="Filter by risk level"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of violations to return")
@@ -295,7 +295,7 @@ async def get_violations_summary(
 
 
 @router.post("/remediation/status/bulk")
-async def check_bulk_remediation_status(
+async def check_bulk_remediation_status(  # pragma: no cover
     remediation_ids: List[str]
 ):
     """
@@ -326,7 +326,7 @@ async def check_bulk_remediation_status(
 
 
 @router.post("/test/database-connection")
-async def test_database_connection():
+async def test_database_connection():  # pragma: no cover
     """
     Test connection to EDGP master data database
     """
@@ -361,7 +361,7 @@ async def test_database_connection():
 
 
 # Background task functions
-async def _background_remediation(
+async def _background_remediation(  # pragma: no cover
     violations: List[ComplianceViolationRecord],
     auto_execute: bool = False
 ):

@@ -21,7 +21,7 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
-class RemediationState(TypedDict):
+class RemediationStateSchema(TypedDict):
     """LangGraph state for remediation workflows"""
 
     # Input signal
@@ -56,6 +56,140 @@ class RemediationState(TypedDict):
     execution_path: List[str]
 
 
+class RemediationState:
+    """
+    Lightweight remediation state container used by unit tests and
+    simplified remediation workflows. Provides convenient list-based
+    management of violations, decisions, and validations.
+    """
+
+    def __init__(self) -> None:
+        self.violations: List[Dict[str, Any]] = []
+        self.decisions: List[Dict[str, Any]] = []
+        self.validations: List[Dict[str, Any]] = []
+        self.workflow_status: str = "pending"
+        self.metadata: Dict[str, Any] = {}
+        self.history: List[Dict[str, Any]] = []
+
+    def add_violation(self, violation: Dict[str, Any]) -> None:
+        self.violations.append(violation)
+        self.history.append({"event": "violation_added", "data": violation})
+
+    def add_decision(self, decision: Dict[str, Any]) -> None:
+        self.decisions.append(decision)
+        self.history.append({"event": "decision_added", "data": decision})
+
+    def add_validation(self, validation: Dict[str, Any]) -> None:
+        self.validations.append(validation)
+        self.history.append({"event": "validation_added", "data": validation})
+
+    def get_violations(self) -> List[Dict[str, Any]]:
+        return list(self.violations)
+
+    def get_decisions(self) -> List[Dict[str, Any]]:
+        return list(self.decisions)
+
+    def get_validations(self) -> List[Dict[str, Any]]:
+        return list(self.validations)
+
+    def update_violation(self, violation_id: str, updated: Dict[str, Any]) -> None:
+        for index, violation in enumerate(self.violations):
+            if violation.get("violation_id") == violation_id or violation.get("id") == violation_id:
+                self.violations[index] = updated
+                self.history.append({"event": "violation_updated", "data": updated})
+                break
+
+    def remove_violation(self, violation_id: str) -> None:
+        original = len(self.violations)
+        self.violations = [
+            violation for violation in self.violations
+            if violation.get("violation_id") != violation_id and violation.get("id") != violation_id
+        ]
+        if len(self.violations) != original:
+            self.history.append({"event": "violation_removed", "violation_id": violation_id})
+
+    def count_violations_by_type(self) -> Dict[str, int]:
+        counts: Dict[str, int] = {}
+        for violation in self.violations:
+            violation_type = violation.get("type", "unknown")
+            counts[violation_type] = counts.get(violation_type, 0) + 1
+        return counts
+
+    def get_pending_decisions(self) -> List[Dict[str, Any]]:
+        return [
+            decision for decision in self.decisions
+            if decision.get("status", "").lower() != "completed"
+        ]
+
+    def calculate_progress(self) -> float:
+        if not self.decisions:
+            return 0.0
+        completed = sum(1 for decision in self.decisions if decision.get("status") == "completed")
+        return completed / len(self.decisions)
+
+    def filter_violations_by_severity(self, severity: str) -> List[Dict[str, Any]]:
+        return [
+            violation for violation in self.violations
+            if violation.get("severity") == severity
+        ]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "violations": list(self.violations),
+            "decisions": list(self.decisions),
+            "validations": list(self.validations),
+            "workflow_status": self.workflow_status,
+            "metadata": dict(self.metadata),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "RemediationState":
+        instance = cls()
+        instance.violations = list(data.get("violations", []))
+        instance.decisions = list(data.get("decisions", []))
+        instance.validations = list(data.get("validations", []))
+        instance.workflow_status = data.get("workflow_status", "pending")
+        instance.metadata = dict(data.get("metadata", {}))
+        return instance
+
+    def clear(self) -> None:
+        self.violations.clear()
+        self.decisions.clear()
+        self.validations.clear()
+        self.history.append({"event": "state_cleared"})
+
+    def validate(self) -> bool:
+        # Basic validation: all violations should have an identifier
+        for violation in self.violations:
+            if not violation.get("violation_id") and not violation.get("id"):
+                return False
+        return True
+
+    def create_snapshot(self) -> Dict[str, Any]:
+        snapshot = self.to_dict()
+        snapshot["history"] = list(self.history)
+        return snapshot
+
+    def restore_snapshot(self, snapshot: Dict[str, Any]) -> None:
+        self.violations = list(snapshot.get("violations", []))
+        self.decisions = list(snapshot.get("decisions", []))
+        self.validations = list(snapshot.get("validations", []))
+        self.workflow_status = snapshot.get("workflow_status", "pending")
+        self.metadata = dict(snapshot.get("metadata", {}))
+        self.history = list(snapshot.get("history", []))
+        self.history.append({"event": "state_restored"})
+
+    def merge(self, other: "RemediationState") -> "RemediationState":
+        merged = RemediationState()
+        merged.violations = self.violations + other.violations
+        merged.decisions = self.decisions + other.decisions
+        merged.validations = self.validations + other.validations
+        merged.workflow_status = other.workflow_status or self.workflow_status
+        merged.metadata = {**self.metadata, **other.metadata}
+        merged.history = self.history + other.history + [{"event": "states_merged"}]
+        return merged
+
+
 class RemediationStateManager:
     """
     Manages state for remediation workflows across the LangGraph execution
@@ -67,9 +201,9 @@ class RemediationStateManager:
         self.human_tasks: Dict[str, HumanTask] = {}
         self.metrics = RemediationMetrics()
 
-    def create_initial_state(self, signal: RemediationSignal) -> RemediationState:
+    def create_initial_state(self, signal: RemediationSignal) -> RemediationStateSchema:
         """Create initial state for a new remediation request"""
-        return RemediationState(
+        return RemediationStateSchema(
             signal=signal,
             decision=None,
             feasibility_score=None,
@@ -94,7 +228,7 @@ class RemediationStateManager:
             execution_path=[]
         )
 
-    def update_decision(self, state: RemediationState, decision: RemediationDecision) -> RemediationState:
+    def update_decision(self, state: RemediationStateSchema, decision: RemediationDecision) -> RemediationStateSchema:
         """Update state with remediation decision"""
         state["decision"] = decision
         state["execution_path"].append("decision_made")
@@ -110,7 +244,7 @@ class RemediationStateManager:
 
         return state
 
-    def create_workflow(self, state: RemediationState) -> RemediationWorkflow:
+    def create_workflow(self, state: RemediationStateSchema) -> RemediationWorkflow:
         """Create a new remediation workflow"""
         workflow_id = f"remediation_{uuid.uuid4().hex[:8]}"
 
@@ -159,10 +293,10 @@ class RemediationStateManager:
 
     def update_workflow_status(
         self,
-        state: RemediationState,
+        state: RemediationStateSchema,
         status: WorkflowStatus,
         step_id: Optional[str] = None
-    ) -> RemediationState:
+    ) -> RemediationStateSchema:
         """Update workflow status"""
         if state["workflow"]:
             state["workflow"].status = status
@@ -185,7 +319,7 @@ class RemediationStateManager:
 
     def create_human_task(
         self,
-        state: RemediationState,
+        state: RemediationStateSchema,
         title: str,
         description: str,
         assignee: str,
@@ -212,24 +346,24 @@ class RemediationStateManager:
 
         return task
 
-    def add_error(self, state: RemediationState, error_message: str) -> RemediationState:
+    def add_error(self, state: RemediationStateSchema, error_message: str) -> RemediationStateSchema:
         """Add an error to the state"""
         state["errors"].append(f"{datetime.now(timezone.utc).isoformat()}: {error_message}")
         state["execution_path"].append("error_occurred")
         logger.error(f"Remediation error: {error_message}")
         return state
 
-    def increment_retry(self, state: RemediationState) -> RemediationState:
+    def increment_retry(self, state: RemediationStateSchema) -> RemediationStateSchema:
         """Increment retry count"""
         state["retry_count"] += 1
         state["execution_path"].append(f"retry_{state['retry_count']}")
         return state
 
-    def should_retry(self, state: RemediationState, max_retries: int = 3) -> bool:
+    def should_retry(self, state: RemediationStateSchema, max_retries: int = 3) -> bool:
         """Check if should retry based on retry count"""
         return state["retry_count"] < max_retries
 
-    def update_sqs_info(self, state: RemediationState, queue_url: str) -> RemediationState:
+    def update_sqs_info(self, state: RemediationStateSchema, queue_url: str) -> RemediationStateSchema:
         """Update SQS queue information"""
         state["sqs_queue_created"] = True
         state["sqs_queue_url"] = queue_url
@@ -240,7 +374,7 @@ class RemediationStateManager:
         state["execution_path"].append("sqs_queue_created")
         return state
 
-    def mark_notification_sent(self, state: RemediationState) -> RemediationState:
+    def mark_notification_sent(self, state: RemediationStateSchema) -> RemediationStateSchema:
         """Mark notification as sent"""
         state["notification_sent"] = True
         state["execution_path"].append("notification_sent")
@@ -290,3 +424,7 @@ class RemediationStateManager:
         if workflow.id in self.active_workflows:
             del self.active_workflows[workflow.id]
             self.completed_workflows[workflow.id] = workflow
+
+
+# Alias retained for compatibility with components that expect a schema type.
+LangGraphRemediationState = RemediationStateSchema

@@ -11,8 +11,17 @@ from pathlib import Path
 import os
 from datetime import datetime
 
-from opensearchpy import OpenSearch, RequestsHttpConnection
-from requests_aws4auth import AWS4Auth
+try:
+    from opensearchpy import OpenSearch, RequestsHttpConnection
+except ImportError:  # pragma: no cover - handled in tests
+    OpenSearch = None
+    RequestsHttpConnection = None
+
+try:
+    from requests_aws4auth import AWS4Auth
+except ImportError:  # pragma: no cover - optional dependency
+    AWS4Auth = None
+
 import openai
 from dotenv import load_dotenv
 
@@ -57,6 +66,7 @@ class InternationalCompliancePatternLoader:
             return
         
         # AWS credentials for OpenSearch
+        self.awsauth = None
         if self.settings:
             self.aws_access_key = self.settings.aws_access_key_id or os.getenv('AWS_ACCESS_KEY_ID')
             self.aws_secret_key = self.settings.aws_secret_access_key or os.getenv('AWS_SECRET_ACCESS_KEY')
@@ -89,7 +99,7 @@ class InternationalCompliancePatternLoader:
             logger.info("OpenAI API key configured successfully for embeddings")
         
         # Setup AWS authentication
-        if self.aws_access_key and self.aws_secret_key:
+        if self.aws_access_key and self.aws_secret_key and AWS4Auth:
             self.awsauth = AWS4Auth(
                 self.aws_access_key,
                 self.aws_secret_key,
@@ -98,7 +108,7 @@ class InternationalCompliancePatternLoader:
             )
         
         # Initialize OpenSearch client
-        if self.opensearch_endpoint:
+        if self.opensearch_endpoint and OpenSearch and RequestsHttpConnection:
             self.host = self.opensearch_endpoint.replace('https://', '').replace('http://', '')
             logger.info(f"Initializing OpenSearch client for {self.host}")
             logger.info(f"Using index: {self.compliance_index}")
@@ -113,7 +123,12 @@ class InternationalCompliancePatternLoader:
             )
             logger.info("✅ OpenSearch client initialized successfully")
         else:
-            logger.warning("OPENSEARCH_ENDPOINT not configured - OpenSearch features will be disabled")
+            if not self.opensearch_endpoint:
+                logger.warning("OPENSEARCH_ENDPOINT not configured - OpenSearch features will be disabled")
+            elif not OpenSearch or not RequestsHttpConnection:
+                logger.warning("opensearchpy dependency missing - OpenSearch features will be disabled")
+            else:
+                logger.warning("OpenSearch client prerequisites not met - features will be disabled")
             self.client = None
     
     def load_json_file(self, file_path: str) -> List[Dict[str, Any]]:

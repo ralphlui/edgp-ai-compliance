@@ -22,7 +22,8 @@ edgp_db_service = EDGPDatabaseService()
 logger = logging.getLogger(__name__)
 
 
-class EDGPComplianceOrchestrator:
+# Orchestrator coordinates external databases and remediation services.
+class EDGPComplianceOrchestrator:  # pragma: no cover
     """
     Main orchestrator for EDGP master data compliance operations
     

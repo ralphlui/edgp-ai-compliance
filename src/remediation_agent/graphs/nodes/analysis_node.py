@@ -10,7 +10,7 @@ from typing import Dict, Any, List
 import json
 
 from ...agents.validation_agent import ValidationAgent
-from ...state.remediation_state import RemediationState
+from ...state.remediation_state import RemediationStateSchema
 from ...state.models import RemediationDecision, RemediationType
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class AnalysisNode:
     def __init__(self):
         self.validation_agent = ValidationAgent()
 
-    async def __call__(self, state: RemediationState) -> RemediationState:
+    async def __call__(self, state: RemediationStateSchema) -> RemediationStateSchema:
         """
         Execute the analysis node
 
@@ -106,7 +106,7 @@ class AnalysisNode:
             state["execution_path"].append("analysis_failed")
             return state
 
-    async def _assess_complexity(self, state: RemediationState) -> Dict[str, Any]:
+    async def _assess_complexity(self, state: RemediationStateSchema) -> Dict[str, Any]:
         """Assess the complexity of the remediation requirement"""
 
         signal = state["signal"]
@@ -349,7 +349,7 @@ class AnalysisNode:
 
     async def _calculate_feasibility(
         self,
-        state: RemediationState,
+        state: RemediationStateSchema,
         complexity_assessment: Dict[str, Any]
     ) -> float:
         """Calculate feasibility score for automatic remediation"""
