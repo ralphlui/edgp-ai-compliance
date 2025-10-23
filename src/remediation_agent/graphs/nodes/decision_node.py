@@ -10,7 +10,7 @@ import json
 from typing import Dict, Any, List
 
 from ...agents.decision_agent import DecisionAgent
-from ...state.remediation_state import RemediationState
+from ...state.remediation_state import RemediationStateSchema
 from ...state.models import RemediationType, RiskLevel
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ class DecisionNode:
             }
         }
 
-    async def __call__(self, state: RemediationState) -> RemediationState:
+    async def __call__(self, state: RemediationStateSchema) -> RemediationStateSchema:
         """
         Execute the decision node
 
@@ -200,7 +200,7 @@ class DecisionNode:
         decision,
         complexity_assessment: Dict[str, Any],
         feasibility_score: float,
-        state: RemediationState
+        state: RemediationStateSchema
     ):
         """Validate and potentially adjust the AI agent's decision"""
 
@@ -348,7 +348,7 @@ class DecisionNode:
 
         return next_steps
 
-    def _create_fallback_decision(self, state: RemediationState):
+    def _create_fallback_decision(self, state: RemediationStateSchema):
         """Create a safe fallback decision when the main decision process fails"""
 
         from ...state.models import RemediationDecision
@@ -363,7 +363,7 @@ class DecisionNode:
             prerequisites=["Manual assessment required", "System verification needed"]
         )
 
-    def should_proceed_to_workflow(self, state: RemediationState) -> bool:
+    def should_proceed_to_workflow(self, state: RemediationStateSchema) -> bool:
         """Determine if the process should proceed to workflow creation"""
 
         decision = state.get("decision")
@@ -378,7 +378,7 @@ class DecisionNode:
 
         return len(blocking_errors) == 0
 
-    def should_require_human_intervention(self, state: RemediationState) -> bool:
+    def should_require_human_intervention(self, state: RemediationStateSchema) -> bool:
         """Determine if human intervention is required at this stage"""
 
         decision = state.get("decision")
@@ -390,7 +390,7 @@ class DecisionNode:
             RemediationType.MANUAL_ONLY
         ]
 
-    def get_decision_summary(self, state: RemediationState) -> Dict[str, Any]:
+    def get_decision_summary(self, state: RemediationStateSchema) -> Dict[str, Any]:
         """Get a summary of the decision for logging/reporting"""
 
         decision = state.get("decision")

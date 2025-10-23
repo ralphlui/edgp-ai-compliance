@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional
 
 from ...agents.workflow_agent import WorkflowAgent
 from ...tools.sqs_tool import SQSTool
-from ...state.remediation_state import RemediationState
+from ...state.remediation_state import RemediationStateSchema
 from ...state.models import WorkflowStatus, RemediationType
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class WorkflowNode:
         self.workflow_agent = WorkflowAgent()
         self.sqs_tool = SQSTool()
 
-    async def __call__(self, state: RemediationState) -> RemediationState:
+    async def __call__(self, state: RemediationStateSchema) -> RemediationStateSchema:
         """
         Execute the workflow node
 
@@ -182,7 +182,7 @@ class WorkflowNode:
             logger.error(f"❌ [SQS-CONFIG-ERROR] Failed to get main queue URL: {str(e)}")
             return None
 
-    async def _initialize_workflow_execution(self, state: RemediationState):
+    async def _initialize_workflow_execution(self, state: RemediationStateSchema):
         """Initialize workflow execution based on remediation type"""
 
         workflow = state["workflow"]
@@ -195,7 +195,7 @@ class WorkflowNode:
         else:  # MANUAL_ONLY
             await self._initialize_manual_workflow(state)
 
-    async def _initialize_automatic_workflow(self, state: RemediationState):
+    async def _initialize_automatic_workflow(self, state: RemediationStateSchema):
         """Initialize automatic workflow execution"""
 
         workflow = state["workflow"]
@@ -222,7 +222,7 @@ class WorkflowNode:
 
         logger.info(f"Automatic workflow {workflow.id} initialized and started")
 
-    async def _initialize_human_loop_workflow(self, state: RemediationState):
+    async def _initialize_human_loop_workflow(self, state: RemediationStateSchema):
         """Initialize human-in-loop workflow"""
 
         workflow = state["workflow"]
@@ -244,7 +244,7 @@ class WorkflowNode:
 
         logger.info(f"Human-in-loop workflow {workflow.id} initialized - awaiting human input")
 
-    async def _initialize_manual_workflow(self, state: RemediationState):
+    async def _initialize_manual_workflow(self, state: RemediationStateSchema):
         """Initialize manual-only workflow"""
 
         workflow = state["workflow"]
@@ -267,7 +267,7 @@ class WorkflowNode:
 
         logger.info(f"Manual workflow {workflow.id} initialized - requires immediate human attention")
 
-    async def execute_next_workflow_step(self, state: RemediationState) -> Dict[str, Any]:
+    async def execute_next_workflow_step(self, state: RemediationStateSchema) -> Dict[str, Any]:
         """Execute the next step in the workflow"""
 
         workflow = state["workflow"]
@@ -321,7 +321,7 @@ class WorkflowNode:
 
         return all_steps_processed
 
-    async def monitor_workflow_progress(self, state: RemediationState) -> Dict[str, Any]:
+    async def monitor_workflow_progress(self, state: RemediationStateSchema) -> Dict[str, Any]:
         """Monitor and report on workflow progress"""
 
         workflow = state["workflow"]
@@ -363,7 +363,7 @@ class WorkflowNode:
 
         return progress_info
 
-    def should_proceed_to_human_loop(self, state: RemediationState) -> bool:
+    def should_proceed_to_human_loop(self, state: RemediationStateSchema) -> bool:
         """Determine if the workflow should proceed to human loop processing"""
 
         decision = state.get("decision")
@@ -375,7 +375,7 @@ class WorkflowNode:
             RemediationType.MANUAL_ONLY
         ]
 
-    def get_workflow_summary(self, state: RemediationState) -> Dict[str, Any]:
+    def get_workflow_summary(self, state: RemediationStateSchema) -> Dict[str, Any]:
         """Get a summary of the workflow for reporting"""
 
         workflow = state.get("workflow")

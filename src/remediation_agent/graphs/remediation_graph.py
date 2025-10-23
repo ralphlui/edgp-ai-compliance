@@ -13,7 +13,7 @@ from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.runnables import RunnableConfig
 
-from ..state.remediation_state import RemediationState, RemediationStateManager
+from ..state.remediation_state import RemediationStateSchema, RemediationStateManager
 from ..state.models import (
     RemediationSignal,
     WorkflowStatus,
@@ -63,7 +63,7 @@ class RemediationGraph:
         """Build the LangGraph workflow"""
 
         # Create the graph with our state schema
-        workflow = StateGraph(RemediationState)
+        workflow = StateGraph(RemediationStateSchema)
 
         # Add nodes
         workflow.add_node("analyze", self.analysis_node)
@@ -216,7 +216,7 @@ class RemediationGraph:
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }
 
-    def _route_after_workflow_creation(self, state: RemediationState) -> str:
+    def _route_after_workflow_creation(self, state: RemediationStateSchema) -> str:
         """Route the workflow after creation based on decision type"""
 
         # Check for errors first
@@ -233,7 +233,7 @@ class RemediationGraph:
         else:
             return "automatic_execution"
 
-    async def _finalize_remediation(self, state: RemediationState) -> RemediationState:
+    async def _finalize_remediation(self, state: RemediationStateSchema) -> RemediationStateSchema:
         """Finalize the remediation process"""
 
         logger.info(f"Finalizing remediation for violation {state['signal'].violation.rule_id}")
@@ -278,7 +278,7 @@ class RemediationGraph:
 
     def _create_execution_summary(
         self,
-        final_state: RemediationState,
+        final_state: RemediationStateSchema,
         execution_steps: List[Dict[str, Any]],
         signal: RemediationSignal
     ) -> Dict[str, Any]:
@@ -343,7 +343,7 @@ class RemediationGraph:
 
         return summary
 
-    def _calculate_execution_metrics(self, state: RemediationState) -> Dict[str, Any]:
+    def _calculate_execution_metrics(self, state: RemediationStateSchema) -> Dict[str, Any]:
         """Calculate execution metrics"""
 
         context = state.get("context", {})
@@ -369,7 +369,7 @@ class RemediationGraph:
 
         return metrics
 
-    def _determine_next_steps(self, state: RemediationState) -> List[str]:
+    def _determine_next_steps(self, state: RemediationStateSchema) -> List[str]:
         """Determine next steps based on final state"""
 
         next_steps = []

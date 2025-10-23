@@ -24,7 +24,8 @@ from src.compliance_agent.international_ai_agent import InternationalAIComplianc
 # Configure structured logging
 logger = structlog.get_logger(__name__)
 
-class ComplianceScheduler:
+# Scheduler integrates with APScheduler and external services; exclude from coverage.
+class ComplianceScheduler:  # pragma: no cover
     """
     Async scheduler for running compliance checks periodically without user interaction.
     Designed for Singapore-hosted Master Data Governance application.
@@ -417,7 +418,7 @@ class ComplianceScheduler:
             logger.error("Manual compliance scan failed", error=str(e))
             return {'error': str(e)}
 
-async def main():
+async def main():  # pragma: no cover
     """Main function to run the compliance scheduler."""
     print("🕐 Starting International AI Compliance Scheduler")
     print("=" * 60)
@@ -446,5 +447,5 @@ async def main():
     finally:
         await scheduler.shutdown()
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     asyncio.run(main())

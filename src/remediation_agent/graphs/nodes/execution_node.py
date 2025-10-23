@@ -11,7 +11,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
 from enum import Enum
 
-from ...state.remediation_state import RemediationState
+from ...state.remediation_state import RemediationStateSchema
 from ...state.models import (
     RemediationType,
     WorkflowStatus,
@@ -216,7 +216,7 @@ class ExecutionNode:
             "notify": NotificationExecutor()
         }
 
-    async def __call__(self, state: RemediationState) -> RemediationState:
+    async def __call__(self, state: RemediationStateSchema) -> RemediationStateSchema:
         """
         Execute the remediation workflow
 
@@ -272,7 +272,7 @@ class ExecutionNode:
 
         return state
 
-    async def _execute_workflow_steps(self, workflow: RemediationWorkflow, state: RemediationState) -> List[Dict[str, Any]]:
+    async def _execute_workflow_steps(self, workflow: RemediationWorkflow, state: RemediationStateSchema) -> List[Dict[str, Any]]:
         """Execute individual workflow steps"""
         results = []
 
@@ -335,7 +335,7 @@ class ExecutionNode:
         else:
             return "unknown"
 
-    def _extract_action_parameters(self, step: WorkflowStep, state: RemediationState) -> Dict[str, Any]:
+    def _extract_action_parameters(self, step: WorkflowStep, state: RemediationStateSchema) -> Dict[str, Any]:
         """Extract parameters for action execution from workflow step and state"""
         signal = state["signal"]
 

@@ -8,9 +8,14 @@ import json
 from typing import Dict, Any, List, Optional
 import openai
 from ..utils.logger import get_logger
-from .ai_secrets_service import get_openai_api_key
+from . import ai_secrets_service
 
 logger = get_logger(__name__)
+
+
+def get_openai_api_key(secret_name: Optional[str] = None) -> Optional[str]:
+    """Wrapper around secrets service to facilitate test patching."""
+    return ai_secrets_service.get_openai_api_key(secret_name)
 
 
 class LLMComplianceService:
@@ -20,11 +25,18 @@ class LLMComplianceService:
     
     def __init__(self):
         self.client = None
-        self.model_name = "gpt-3.5-turbo"
+        self.model = "gpt-3.5-turbo"
+        self.model_name = self.model
         self.temperature = 0.1
         self.max_tokens = 500
+        self.initialized = False
         self.is_initialized = False
-    
+
+    def _mark_initialized(self, value: bool) -> None:
+        """Keep initialization flags in sync."""
+        self.initialized = value
+        self.is_initialized = value
+
     async def initialize(self, secret_name: Optional[str] = None) -> bool:
         """
         Initialize the LLM service with OpenAI API key
@@ -43,12 +55,13 @@ class LLMComplianceService:
             if not api_key:
                 logger.warning("No OpenAI API key found - LLM suggestions will be disabled")
                 print("⚠️ No OpenAI API key found - LLM suggestions will be disabled")
+                self._mark_initialized(False)
                 return False
             
             # Initialize OpenAI client
             openai.api_key = api_key
             self.client = openai
-            self.is_initialized = True
+            self._mark_initialized(True)
             
             logger.info("LLM Compliance Service initialized successfully")
             logger.info(f"Model: {self.model_name}, Temperature: {self.temperature}")
@@ -59,7 +72,7 @@ class LLMComplianceService:
         except Exception as e:
             logger.error(f"Failed to initialize LLM service: {str(e)}")
             print(f"❌ Failed to initialize LLM service: {str(e)}")
-            self.is_initialized = False
+            self._mark_initialized(False)
             return False
     
     async def generate_compliance_suggestion(
@@ -239,7 +252,8 @@ Respond ONLY with valid JSON in this format:
         """Generate fallback suggestions when LLM is not available"""
         
         excess_days = violation_data.get('excess_days', 0)
-        violation_type = violation_data.get('violation_type', 'DATA_RETENTION_EXCEEDED')
+        violation_type = violation_data.get('violation_type') or violation_data.get('type', 'DATA_RETENTION_EXCEEDED')
+        severity = violation_data.get('severity', 'medium')
         
         if framework == "PDPA":
             legal_ref = "PDPA Section 24 - Data Retention Limitation"
@@ -251,13 +265,18 @@ Respond ONLY with valid JSON in this format:
             legal_ref = "Data Protection Regulations"
             impact = "Regulatory compliance risk and potential penalties"
         
-        return {
+        suggestion = {
             'description': f"Data retention period exceeded by {excess_days} days, violating {framework} requirements for lawful data processing and storage limitations.",
             'recommendation': f"Immediately delete or anonymize customer data that exceeds retention period. Review data retention policies and implement automated cleanup processes to prevent future violations.",
             'legal_reference': legal_ref,
             'urgency_level': 'HIGH' if excess_days > 30 else 'MEDIUM',
-            'compliance_impact': impact
+            'compliance_impact': impact,
+            'severity': severity,
+            'framework': framework,
+            'violation_type': violation_type
         }
+
+        return suggestion
     
     async def generate_remediation_plan(
         self,
@@ -301,27 +320,57 @@ Respond ONLY with valid JSON."""
             logger.error(f"Error generating remediation plan: {str(e)}")
             return self._get_basic_remediation_plan(violations, framework)
     
-    def _format_violations_for_prompt(self, violations: List[Dict[str, Any]]) -> str:
-        """Format violations for LLM prompt"""
-        summary = []
-        for i, v in enumerate(violations[:5], 1):  # Limit to 5 for prompt size
-            excess = v.get('excess_days', 0)
-            summary.append(f"{i}. Customer {v.get('customer_id', 'Unknown')}: {excess} days over retention limit")
+    def _format_violations_for_prompt(
+        self,
+        violations: List[Dict[str, Any]],
+        max_violations: int = 5
+    ) -> str:
+        """Format violations for inclusion in prompts."""
+        if not violations:
+            return "No active compliance violations provided."
+
+        summary: List[str] = []
+        for index, violation in enumerate(violations[:max_violations], 1):
+            violation_type = violation.get('type') or violation.get('violation_type', 'unknown')
+            severity = violation.get('severity', 'medium')
+            excess = violation.get('excess_days', 0)
+            customer = violation.get('customer_id') or violation.get('id') or violation.get('record_id', 'Unknown')
+            summary.append(
+                f"{index}. {violation_type} (severity: {severity}) for customer {customer}"
+                f" — {excess} days beyond retention limit"
+            )
+
+        total_violations = len(violations)
+        if total_violations > max_violations and summary:
+            summary[-1] += f" (and {total_violations - max_violations} more)"
+
         return "\n".join(summary)
+
+    def _create_remediation_prompt(self, violations_text: str, framework: str) -> str:
+        """Create high-level remediation prompt content."""
+
+        return (
+            f"You are a remediation planning specialist for {framework} compliance. "
+            f"Review the following violations and propose remediation steps.\n\n"
+            f"VIOLATIONS:\n{violations_text}\n\n"
+            "Provide clear priority, short-term, and long-term actions, resource needs, "
+            "and monitoring guidance in structured JSON format."
+        )
     
     def _parse_remediation_response(self, response: str) -> Dict[str, Any]:
         """Parse remediation plan response"""
         try:
             if response.startswith('{') and response.endswith('}'):
-                return json.loads(response)
+                parsed_plan = json.loads(response)
+                return self._ensure_plan_steps(parsed_plan)
         except json.JSONDecodeError:
             pass
-        
+
         return self._get_basic_remediation_plan([], "")
     
     def _get_basic_remediation_plan(self, violations: List[Dict[str, Any]], framework: str) -> Dict[str, Any]:
         """Basic remediation plan fallback"""
-        return {
+        plan = {
             "priority_actions": [
                 "Immediately identify and delete/anonymize expired customer data",
                 "Notify data protection officer of compliance violations",
@@ -341,3 +390,33 @@ Respond ONLY with valid JSON."""
             "resources_needed": ["Compliance team", "IT/Database administrators", "Legal review"],
             "compliance_monitoring": "Monthly compliance audits and automated retention period monitoring"
         }
+
+        plan = self._ensure_plan_steps(plan)
+        plan["framework"] = framework or "Generic"
+        plan["violation_count"] = len(violations)
+        return plan
+
+    def _ensure_plan_steps(self, plan: Dict[str, Any]) -> Dict[str, Any]:
+        """Ensure plan dictionaries expose a consolidated steps list."""
+        if not isinstance(plan, dict):
+            return plan
+
+        if isinstance(plan.get("steps"), list) and plan["steps"]:
+            return plan
+
+        sections = [
+            ("Priority", plan.get("priority_actions", [])),
+            ("Short-term", plan.get("short_term_plan", [])),
+            ("Long-term", plan.get("long_term_plan", []))
+        ]
+
+        steps: List[str] = []
+        for label, actions in sections:
+            for action in actions:
+                steps.append(f"{label}: {action}")
+
+        if not steps:
+            steps.append("Priority: Assess violation scope and draft remediation steps")
+
+        plan["steps"] = steps
+        return plan

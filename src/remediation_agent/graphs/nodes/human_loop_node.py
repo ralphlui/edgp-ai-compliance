@@ -10,7 +10,7 @@ from typing import Dict, Any
 from datetime import datetime, timedelta, timezone
 
 from ...tools.notification_tool import NotificationTool, NotificationType
-from ...state.remediation_state import RemediationState
+from ...state.remediation_state import RemediationStateSchema
 from ...state.models import (
     HumanTask,
     WorkflowStatus,
@@ -43,7 +43,7 @@ class HumanLoopNode:
             }
         }
 
-    async def __call__(self, state: RemediationState) -> RemediationState:
+    async def __call__(self, state: RemediationStateSchema) -> RemediationStateSchema:
         """
         Execute the human loop node
 
@@ -95,7 +95,7 @@ class HumanLoopNode:
             state["execution_path"].append("human_loop_failed")
             return state
 
-    def _determine_intervention_type(self, state: RemediationState) -> str:
+    def _determine_intervention_type(self, state: RemediationStateSchema) -> str:
         """Determine the type of human intervention needed"""
 
         decision = state.get("decision")
@@ -117,7 +117,7 @@ class HumanLoopNode:
 
     async def _create_human_tasks(
         self,
-        state: RemediationState,
+        state: RemediationStateSchema,
         intervention_type: str
     ) -> list[HumanTask]:
         """Create human tasks based on intervention type and workflow requirements"""
@@ -141,7 +141,7 @@ class HumanLoopNode:
 
         return tasks
 
-    async def _create_manual_execution_tasks(self, state: RemediationState) -> list[HumanTask]:
+    async def _create_manual_execution_tasks(self, state: RemediationStateSchema) -> list[HumanTask]:
         """Create tasks for full manual execution"""
 
         signal = state["signal"]
@@ -188,7 +188,7 @@ class HumanLoopNode:
 
     async def _create_review_approval_tasks(
         self,
-        state: RemediationState,
+        state: RemediationStateSchema,
         intervention_type: str
     ) -> list[HumanTask]:
         """Create review and approval tasks"""
@@ -240,7 +240,7 @@ class HumanLoopNode:
 
         return tasks
 
-    async def _create_oversight_tasks(self, state: RemediationState) -> list[HumanTask]:
+    async def _create_oversight_tasks(self, state: RemediationStateSchema) -> list[HumanTask]:
         """Create oversight tasks for monitoring automatic execution"""
 
         signal = state["signal"]
@@ -264,7 +264,7 @@ class HumanLoopNode:
 
         return [oversight_task]
 
-    async def _create_risk_management_tasks(self, state: RemediationState) -> list[HumanTask]:
+    async def _create_risk_management_tasks(self, state: RemediationStateSchema) -> list[HumanTask]:
         """Create additional tasks for high-risk violations"""
 
         signal = state["signal"]
@@ -315,7 +315,7 @@ class HumanLoopNode:
 
     async def _send_notifications(
         self,
-        state: RemediationState,
+        state: RemediationStateSchema,
         human_tasks: list[HumanTask]
     ) -> list[Dict[str, Any]]:
         """Send notifications for human tasks"""
@@ -354,7 +354,7 @@ class HumanLoopNode:
     async def _schedule_reminders(
         self,
         human_tasks: list[HumanTask],
-        state: RemediationState
+        state: RemediationStateSchema
     ) -> list[Dict[str, Any]]:
         """Schedule deadline reminders for human tasks"""
 
@@ -498,7 +498,7 @@ class HumanLoopNode:
 
         return approvals
 
-    def _get_notification_type(self, task: HumanTask, state: RemediationState) -> NotificationType:
+    def _get_notification_type(self, task: HumanTask, state: RemediationStateSchema) -> NotificationType:
         """Determine appropriate notification type for a task"""
 
         if task.priority == RiskLevel.CRITICAL:
@@ -520,7 +520,7 @@ class HumanLoopNode:
 
         return reminder_schedules.get(priority, [24, 4])
 
-    def is_human_intervention_complete(self, state: RemediationState) -> bool:
+    def is_human_intervention_complete(self, state: RemediationStateSchema) -> bool:
         """Check if human intervention is complete"""
 
         human_task = state.get("human_task")
@@ -529,7 +529,7 @@ class HumanLoopNode:
 
         return human_task.status == WorkflowStatus.COMPLETED
 
-    def get_human_loop_summary(self, state: RemediationState) -> Dict[str, Any]:
+    def get_human_loop_summary(self, state: RemediationStateSchema) -> Dict[str, Any]:
         """Get summary of human loop activities"""
 
         context = state.get("context", {})
