@@ -281,6 +281,7 @@ class EDGPDatabaseService:
                         SELECT id, email, phone, firstname, lastname, 
                                created_date, updated_date, is_archived, domain_name, workflow_tracker_id
                         FROM customer 
+                        WHERE is_archived = 0
                         ORDER BY created_date DESC
                         """
                         await cursor.execute(query)
