@@ -260,24 +260,11 @@ def create_settings() -> Settings:
     app_env = os.getenv("APP_ENV", "development")
     print(f"🌍 APP_ENV: {app_env}")
     
-    # Map APP_ENV values to actual file names
-    # K8s uses 'prd' but we use .env.production file
-    env_file_mapping = {
-        "prd": "production",
-        "prod": "production",
-        "development": "development",
-        "dev": "development",
-        "sit": "sit",
-        "staging": "staging"
-    }
-    
-    # Get the mapped environment name or use the original
-    mapped_env = env_file_mapping.get(app_env.lower(), app_env)
-    print(f"📂 Mapped to file: .env.{mapped_env}")
-    
-    # Determine which env file to load based on mapped APP_ENV
-    env_file_path = f".env.{mapped_env}"
+    # Determine which env file to load based on APP_ENV
+    # File naming: .env.development, .env.sit, .env.prd
+    env_file_path = f".env.{app_env}"
     env_file = Path(env_file_path)
+    print(f"📂 Looking for file: {env_file_path}")
     
     # Load environment-specific file with override=True to override base values
     if env_file.exists():
