@@ -277,17 +277,49 @@ def create_settings() -> Settings:
         print(f"   ℹ️  {env_file_path} not found, using base .env only")
     
     # Show what was loaded
-    print(f"🔑 Key Configuration Values:")
-    print(f"   ENVIRONMENT: {os.getenv('ENVIRONMENT', 'N/A')}")
-    print(f"   AWS_REGION: {os.getenv('AWS_REGION', 'N/A')}")
-    print(f"   AWS_RDS_ENABLED: {os.getenv('AWS_RDS_ENABLED', 'N/A')}")
-    print(f"   AWS_RDS_SECRET_NAME: {os.getenv('AWS_RDS_SECRET_NAME', 'N/A')}")
-    aws_key = os.getenv('AWS_ACCESS_KEY_ID', None)
-    if aws_key:
-        print(f"   AWS_ACCESS_KEY_ID: {aws_key[:10]}...")
+    print(f"🔑 Key Configuration Values (from environment):")
+    
+    # AWS Region - check if it's a placeholder
+    aws_region = os.getenv('AWS_REGION', 'N/A')
+    if aws_region == 'AWS_REGION':
+        print(f"   AWS_REGION: {aws_region} ⚠️  (PLACEHOLDER - K8s should inject real value)")
+    else:
+        print(f"   AWS_REGION: {aws_region}")
+    
+    # AWS Credentials - check if they're placeholders
+    aws_access_key = os.getenv('AWS_ACCESS_KEY_ID', None)
+    if aws_access_key:
+        if aws_access_key == 'AWS_ACCESS_KEY_ID':
+            print(f"   AWS_ACCESS_KEY_ID: {aws_access_key} ⚠️  (PLACEHOLDER - K8s should inject real value)")
+        else:
+            print(f"   AWS_ACCESS_KEY_ID: {aws_access_key[:10]}... ✅")
     else:
         print(f"   AWS_ACCESS_KEY_ID: N/A")
+    
+    aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY', None)
+    if aws_secret_key:
+        if aws_secret_key == 'AWS_SECRET_ACCESS_KEY':
+            print(f"   AWS_SECRET_ACCESS_KEY: {aws_secret_key} ⚠️  (PLACEHOLDER - K8s should inject real value)")
+        else:
+            print(f"   AWS_SECRET_ACCESS_KEY: ****** ✅")
+    else:
+        print(f"   AWS_SECRET_ACCESS_KEY: N/A")
+    
+    print(f"   ENVIRONMENT: {os.getenv('ENVIRONMENT', 'N/A')}")
+    print(f"   AWS_RDS_ENABLED: {os.getenv('AWS_RDS_ENABLED', 'N/A')}")
+    print(f"   AWS_RDS_SECRET_NAME: {os.getenv('AWS_RDS_SECRET_NAME', 'N/A')}")
     print(f"   OPENSEARCH_ENABLED: {os.getenv('OPENSEARCH_ENABLED', 'N/A')}")
+    
+    # Check if running in K8s
+    if os.path.exists('/var/run/secrets/kubernetes.io'):
+        print(f"   🏗️  Running in Kubernetes cluster")
+    elif os.getenv('KUBERNETES_SERVICE_HOST'):
+        print(f"   🏗️  Running in Kubernetes cluster")
+    else:
+        print(f"   💻 Running locally (not in K8s)")
+        if aws_region == 'AWS_REGION' or aws_access_key == 'AWS_ACCESS_KEY_ID':
+            print(f"   ⚠️  WARNING: Placeholder values detected! These will cause failures.")
+            print(f"   ℹ️  For local testing, use .env.development or .env.sit instead.")
     print("=" * 80)
     
     # Create settings - Pydantic will read from os.environ which now has the correct overrides
