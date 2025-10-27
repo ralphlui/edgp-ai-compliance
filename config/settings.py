@@ -266,11 +266,13 @@ def create_settings() -> Settings:
     env_file = Path(env_file_path)
     print(f"📂 Looking for file: {env_file_path}")
     
-    # Load environment-specific file with override=True to override base values
+    # Load environment-specific file WITHOUT override
+    # This allows K8s-injected env vars (or export commands) to take precedence
+    # File values only set defaults for missing variables
     if env_file.exists():
         print(f"📄 Loading environment-specific configuration: {env_file_path}")
-        load_dotenv(env_file, override=True)
-        print(f"   ✅ {env_file_path} loaded (overriding base values)")
+        load_dotenv(env_file, override=False)
+        print(f"   ✅ {env_file_path} loaded (sets defaults, K8s/export values take precedence)")
     elif not base_env_file.exists():
         print(f"   ⚠️  Neither {env_file_path} nor .env found, using defaults")
     else:
