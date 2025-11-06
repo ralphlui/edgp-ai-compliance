@@ -1,0 +1,370 @@
+[
+  {
+    "id": "PDPA-Section-1",
+    "title": "Section 1 – Short title and commencement",
+    "content": "This Act may be cited as the Personal Data Protection Act 2012. It applies to all organizations in Singapore unless otherwise exempted.",
+    "category": "General Provisions",
+    "applies_to": ["Organization", "Individual"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "PDPA-Section-2",
+    "title": "Section 2 – Interpretation",
+    "content": "Defines terms such as 'personal data', 'business contact information', 'data intermediary', 'organization', and 'processing'. Personal data refers to data about an individual who can be identified from that data alone or with other information that the organization has or is likely to have.",
+    "category": "Definitions",
+    "applies_to": ["Organization", "Data Intermediary"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "PDPA-Section-3",
+    "title": "Section 3 – Purpose of Act",
+    "content": "The purpose of this Act is to govern the collection, use, and disclosure of personal data by organizations in a manner that recognizes both the right of individuals to protect their personal data and the need of organizations to collect, use, or disclose personal data for legitimate and reasonable purposes.",
+    "category": "General Provisions",
+    "applies_to": ["Organization"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "PDPA-Section-4",
+    "title": "Section 4 – Application of Act",
+    "content": "This Act applies to all organizations, excluding: (a) individuals acting in a personal or domestic capacity; (b) employees acting in the course of employment; (c) public agencies; (d) organizations acting on behalf of public agencies. It also excludes business contact information.",
+    "category": "General Provisions",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Section-11",
+    "title": "Section 11 – Consent",
+    "content": "An organization may collect, use, or disclose personal data about an individual only with the individual's consent. Consent must be voluntary and informed. Organizations must state the purpose clearly.",
+    "category": "Consent Obligations",
+    "applies_to": ["Organization"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Section-12",
+    "title": "Section 12 – Deemed Consent",
+    "content": "An individual is deemed to consent to the collection, use, or disclosure of personal data if the individual voluntarily provides the data for that purpose and it is reasonable that the individual would do so.",
+    "category": "Consent Obligations",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Section-13",
+    "title": "Section 13 – Consent Withdrawal",
+    "content": "An individual may withdraw consent at any time by giving reasonable notice to the organization. The organization must inform the individual of the likely consequences of withdrawal.",
+    "category": "Consent Obligations",
+    "applies_to": ["Organization", "Individual"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Section-14",
+    "title": "Section 14 – Collection Without Consent",
+    "content": "Personal data may be collected without consent if it is reasonable for the purpose and necessary for evaluating suitability, investigating breach of agreement, investigating offence, or for legal proceedings.",
+    "category": "Exceptions",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Section-15",
+    "title": "Section 15 – Use Without Consent",
+    "content": "Personal data may be used without consent for purposes such as business asset transaction, recovery of debt, or legal proceedings.",
+    "category": "Exceptions",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Section-16",
+    "title": "Section 16 – Disclosure Without Consent",
+    "content": "Personal data may be disclosed without consent for purposes such as legal proceedings, law enforcement, public interest, or business asset transaction.",
+    "category": "Exceptions",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Section-17",
+    "title": "Section 17 – Purposes for Collecting Personal Data",
+    "content": "Organizations must not collect personal data unless the personal data is collected for a purpose that is reasonable in the circumstances and the individual has been informed of the purpose.",
+    "category": "Purpose Limitation",
+    "applies_to": ["Organization"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Section-18",
+    "title": "Section 18 – Notification of Purposes",
+    "content": "On or before collecting personal data, organizations must notify the individual of purposes for collection, use, or disclosure and obtain consent if required.",
+    "category": "Purpose Limitation",
+    "applies_to": ["Organization"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Section-19",
+    "title": "Section 19 – Use and Disclosure Limitation",
+    "content": "Personal data must not be used or disclosed for purposes other than the purpose for which the data was collected unless the individual consents to the use or disclosure.",
+    "category": "Purpose Limitation",
+    "applies_to": ["Organization"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Section-20",
+    "title": "Section 20 – Accuracy of Personal Data",
+    "content": "Organizations must make a reasonable effort to ensure personal data collected is accurate and complete if the data is likely to be used to make a decision or disclosed to another organization.",
+    "category": "Accuracy Obligation",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Section-21",
+    "title": "Section 21 – Access to Personal Data",
+    "content": "Upon request, organizations must provide individuals with their personal data in its possession or control and information about the ways the data has been used or disclosed within a year before the request.",
+    "category": "Access Obligation",
+    "applies_to": ["Organization", "Individual"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Section-22",
+    "title": "Section 22 – Correction of Personal Data",
+    "content": "Organizations must correct personal data as soon as practicable upon request by an individual unless organization is satisfied on reasonable grounds that correction should not be made.",
+    "category": "Correction Obligation",
+    "applies_to": ["Organization", "Individual"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Section-23",
+    "title": "Section 23 – Access and Correction Requests",
+    "content": "Organizations may refuse access or correction requests on reasonable grounds including if data contains opinion, references to other individuals, legal professional privilege, or would reveal confidential commercial information.",
+    "category": "Access & Correction",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Section-24",
+    "title": "Section 24 – Protection of Personal Data",
+    "content": "Organizations must protect personal data in its possession or control by making reasonable security arrangements to prevent unauthorized access, collection, use, disclosure, copying, modification, disposal or similar risks.",
+    "category": "Protection Obligation",
+    "applies_to": ["Organization"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Section-25",
+    "title": "Section 25 – Retention Limitation",
+    "content": "Organizations must cease to retain documents containing personal data, or remove the means by which the personal data can be associated with particular individuals, as soon as it is reasonable to assume that the purpose for which the personal data was collected is no longer being served by retention of the personal data and retention is no longer necessary for legal or business purposes.",
+    "category": "Retention Obligation",
+    "applies_to": ["Organization"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Section-26",
+    "title": "Section 26 – Transfer of Personal Data Outside Singapore",
+    "content": "Organizations must not transfer personal data to a country or territory outside Singapore except in accordance with requirements prescribed. Organization must ensure comparable standard of protection.",
+    "category": "Transfer Limitation",
+    "applies_to": ["Organization"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Section-27",
+    "title": "Section 27 – Openness Obligation",
+    "content": "Organizations must develop and implement policies and practices that are necessary for the organization to meet its obligations under this Act and make information about its policies and practices available.",
+    "category": "Openness Obligation",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Section-48A",
+    "title": "Section 48A – Data Breach Notification to Commission",
+    "content": "If there is a data breach that affects personal data in its possession or control, organization must assess if data breach is notifiable and notify Commission as soon as practicable (within 3 days).",
+    "category": "Data Breach",
+    "applies_to": ["Organization"],
+    "risk_level": "CRITICAL"
+  },
+  {
+    "id": "PDPA-Section-48B",
+    "title": "Section 48B – Data Breach Notification to Affected Individuals",
+    "content": "Organization must notify affected individuals when data breach is likely to result in significant harm or significant scale. Notification must be made as soon as practicable.",
+    "category": "Data Breach",
+    "applies_to": ["Organization", "Individual"],
+    "risk_level": "CRITICAL"
+  },
+  {
+    "id": "PDPA-Section-48C",
+    "title": "Section 48C – Offences Relating to Data Breach Notification",
+    "content": "Organization commits an offence if it fails to comply with data breach notification obligations without reasonable excuse. Penalties may apply.",
+    "category": "Data Breach",
+    "applies_to": ["Organization"],
+    "risk_level": "CRITICAL"
+  },
+  {
+    "id": "PDPA-Section-48D",
+    "title": "Section 48D – Exemptions from Data Breach Notification",
+    "content": "Commission may exempt organization from notification requirements if appropriate action has been taken or data was encrypted.",
+    "category": "Data Breach",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Section-52",
+    "title": "Section 52 – Offences and Financial Penalties",
+    "content": "Organization that contravenes data protection provisions is liable for financial penalty up to $1,000,000. Commission may give directions to organization to remedy breach.",
+    "category": "Enforcement",
+    "applies_to": ["Organization"],
+    "risk_level": "CRITICAL"
+  },
+  {
+    "id": "PDPA-Part-IX",
+    "title": "Part IX – Do Not Call Registry",
+    "content": "Establishes Do Not Call Registry for Singapore telephone numbers. Organizations must not send specified messages to Singapore telephone numbers registered in the DNC Registry.",
+    "category": "DNC Provisions",
+    "applies_to": ["Organization", "Individual"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Accountability",
+    "title": "Accountability Principle",
+    "content": "Organizations are accountable for personal data in their possession or control, including data transferred to data intermediaries or processors.",
+    "category": "Accountability",
+    "applies_to": ["Organization", "Data Intermediary"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-DataIntermediary",
+    "title": "Data Intermediary Obligations",
+    "content": "Data intermediaries must comply with protection obligations and must not retain personal data after ceasing to act on behalf of organization.",
+    "category": "Data Intermediary",
+    "applies_to": ["Data Intermediary"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Consent-Management",
+    "title": "Consent Management Requirements",
+    "content": "Organizations must provide clear mechanisms for obtaining, managing, and withdrawing consent. Records of consent must be maintained.",
+    "category": "Consent Management",
+    "applies_to": ["Organization"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Children-Data",
+    "title": "Collection of Children's Personal Data",
+    "content": "When collecting personal data from individuals below 18 years, organizations should obtain consent from parent or guardian where appropriate.",
+    "category": "Children's Data",
+    "applies_to": ["Organization"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Sensitive-Data",
+    "title": "Sensitive Personal Data",
+    "content": "Organizations should exercise heightened care when handling sensitive personal data such as health, religious beliefs, or racial/ethnic origin data.",
+    "category": "Sensitive Data",
+    "applies_to": ["Organization"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Automated-Decisions",
+    "title": "Automated Decision Making",
+    "content": "Organizations making solely automated decisions that significantly affect individuals should ensure transparency and provide opportunity for human review.",
+    "category": "Automated Processing",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Third-Party",
+    "title": "Third Party Data Sharing",
+    "content": "Organizations sharing personal data with third parties must ensure third parties provide comparable level of protection and comply with PDPA obligations.",
+    "category": "Third Party",
+    "applies_to": ["Organization"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Privacy-By-Design",
+    "title": "Privacy by Design",
+    "content": "Organizations should implement privacy by design principles when developing new systems, processes, or services that involve personal data.",
+    "category": "Privacy by Design",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Impact-Assessment",
+    "title": "Data Protection Impact Assessment",
+    "content": "Organizations should conduct data protection impact assessments for high-risk processing activities involving personal data.",
+    "category": "Risk Assessment",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Staff-Training",
+    "title": "Staff Training Requirements",
+    "content": "Organizations must provide adequate training to staff who handle personal data to ensure compliance with PDPA obligations.",
+    "category": "Training",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Vendor-Management",
+    "title": "Vendor and Data Processor Management",
+    "content": "Organizations must have contracts and oversight mechanisms in place when engaging vendors or data processors who handle personal data.",
+    "category": "Vendor Management",
+    "applies_to": ["Organization", "Data Intermediary"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Retention-Schedule",
+    "title": "Data Retention Schedule",
+    "content": "Organizations must establish and maintain documented retention schedules that specify retention periods for different categories of personal data.",
+    "category": "Retention Management",
+    "applies_to": ["Organization"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Disposal-Methods",
+    "title": "Secure Disposal of Personal Data",
+    "content": "Organizations must implement secure methods for disposing or anonymizing personal data when retention is no longer required.",
+    "category": "Data Disposal",
+    "applies_to": ["Organization"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Inactive-Accounts",
+    "title": "Inactive Account Management",
+    "content": "Organizations should establish policies for handling personal data of inactive accounts, including deletion or anonymization after reasonable period.",
+    "category": "Account Management",
+    "applies_to": ["Organization"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "PDPA-Audit-Logging",
+    "title": "Audit Trail and Logging",
+    "content": "Organizations should maintain audit trails of personal data access, modifications, and disclosures for accountability and breach detection.",
+    "category": "Audit & Compliance",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Complaint-Handling",
+    "title": "Complaint Handling Process",
+    "content": "Organizations must establish processes for receiving and responding to complaints regarding personal data handling practices.",
+    "category": "Complaint Management",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-DPO-Designation",
+    "title": "Data Protection Officer",
+    "content": "Organizations should designate a Data Protection Officer or contact person responsible for ensuring PDPA compliance.",
+    "category": "Governance",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Policy-Documentation",
+    "title": "Privacy Policy Documentation",
+    "content": "Organizations must document and publish privacy policies that clearly explain personal data practices in accessible language.",
+    "category": "Documentation",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "PDPA-Regular-Review",
+    "title": "Regular Compliance Review",
+    "content": "Organizations should conduct regular reviews and audits of personal data practices to ensure ongoing PDPA compliance.",
+    "category": "Compliance Review",
+    "applies_to": ["Organization"],
+    "risk_level": "MEDIUM"
+  }
+]
