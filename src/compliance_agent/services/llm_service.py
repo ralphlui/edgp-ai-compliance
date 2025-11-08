@@ -5,12 +5,21 @@ Provides AI-powered compliance suggestions and analysis using OpenAI GPT models.
 
 import asyncio
 import json
+import os
 from typing import Dict, Any, List, Optional
 import openai
+from langchain_openai import ChatOpenAI
+from langsmith import traceable
+from langchain.callbacks.tracers import LangChainTracer
 from ..utils.logger import get_logger
 from . import ai_secrets_service
 
 logger = get_logger(__name__)
+
+
+def get_langchain_api_key(secret_name: Optional[str] = None) -> Optional[str]:
+    """Wrapper around secrets service to facilitate getting LangChain API key."""
+    return ai_secrets_service.get_langchain_api_key(secret_name)
 
 
 def get_openai_api_key(secret_name: Optional[str] = None) -> Optional[str]:
@@ -25,6 +34,8 @@ class LLMComplianceService:
     
     def __init__(self):
         self.client = None
+        self.llm = None  # LangChain ChatOpenAI instance
+        self.callbacks = []  # LangSmith callbacks
         self.model = "gpt-3.5-turbo"
         self.model_name = self.model
         self.temperature = 0.1
@@ -58,9 +69,52 @@ class LLMComplianceService:
                 self._mark_initialized(False)
                 return False
             
-            # Initialize OpenAI client
+            # Initialize OpenAI client (legacy)
             openai.api_key = api_key
             self.client = openai
+            
+            # Initialize LangChain ChatOpenAI with LangSmith tracing
+            langsmith_enabled = os.getenv('LANGCHAIN_TRACING_V2', '').lower() == 'true'
+            
+            if langsmith_enabled:
+                # Get LangChain API key from AWS Secrets Manager or environment
+                langchain_api_key = get_langchain_api_key(secret_name)
+                
+                if langchain_api_key:
+                    # Set environment variable for LangChain to use
+                    os.environ['LANGCHAIN_API_KEY'] = langchain_api_key
+                    
+                    # Set other LangChain env vars if not already set
+                    if not os.getenv('LANGCHAIN_ENDPOINT'):
+                        os.environ['LANGCHAIN_ENDPOINT'] = 'https://api.smith.langchain.com'
+                    if not os.getenv('LANGCHAIN_PROJECT'):
+                        os.environ['LANGCHAIN_PROJECT'] = 'edgp-ai-compliance'
+                    
+                    # Create LangSmith tracer for compliance agent only
+                    langsmith_tracer = LangChainTracer(
+                        project_name=os.getenv('LANGCHAIN_PROJECT', 'edgp-ai-compliance')
+                    )
+                    self.callbacks = [langsmith_tracer]
+                    logger.info(f"✅ LangSmith tracing enabled for Compliance Agent (Project: {os.getenv('LANGCHAIN_PROJECT', 'edgp-ai-compliance')})")
+                    print(f"✅ LangSmith tracing enabled for Compliance Agent (Project: {os.getenv('LANGCHAIN_PROJECT', 'edgp-ai-compliance')})")
+                else:
+                    logger.warning("⚠️  LANGCHAIN_TRACING_V2=true but no LangChain API key found - tracing disabled")
+                    print("⚠️  LANGCHAIN_TRACING_V2=true but no LangChain API key found - tracing disabled")
+                    self.callbacks = []
+            else:
+                self.callbacks = []
+                logger.info("ℹ️  LangSmith tracing disabled for Compliance Agent")
+                print("ℹ️  LangSmith tracing disabled for Compliance Agent")
+            
+            # Create LangChain ChatOpenAI instance with callbacks
+            self.llm = ChatOpenAI(
+                api_key=api_key,
+                model=self.model_name,
+                temperature=self.temperature,
+                max_tokens=self.max_tokens,
+                callbacks=self.callbacks
+            )
+            
             self._mark_initialized(True)
             
             logger.info("LLM Compliance Service initialized successfully")
@@ -190,26 +244,27 @@ Respond ONLY with valid JSON in this format:
         return prompt
     
     async def _call_openai_chat(self, prompt: str) -> str:
-        """Call OpenAI Chat Completion API"""
+        """Call OpenAI Chat Completion API via LangChain for tracing"""
         try:
-            response = await asyncio.to_thread(
-                openai.chat.completions.create,
-                model=self.model_name,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a compliance expert specializing in data protection regulations. Provide precise, actionable compliance advice."
-                    },
-                    {
-                        "role": "user", 
-                        "content": prompt
-                    }
-                ],
-                temperature=self.temperature,
-                max_tokens=self.max_tokens
+            # Use LangChain ChatOpenAI for automatic LangSmith tracing
+            from langchain.schema import HumanMessage, SystemMessage
+            
+            messages = [
+                SystemMessage(content="You are a compliance expert specializing in data protection regulations. Provide precise, actionable compliance advice."),
+                HumanMessage(content=prompt)
+            ]
+            
+            # Debug: Log that we're making a traced LLM call
+            if self.callbacks:
+                logger.info(f"🔍 LangSmith: Tracing compliance LLM call (callbacks: {len(self.callbacks)})")
+            
+            # Call LLM with callbacks for tracing
+            response = await self.llm.ainvoke(
+                messages,
+                config={"callbacks": self.callbacks} if self.callbacks else None
             )
             
-            return response.choices[0].message.content.strip()
+            return response.content.strip()
             
         except Exception as e:
             logger.error(f"OpenAI API call failed: {str(e)}")
