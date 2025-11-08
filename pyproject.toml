@@ -4,20 +4,10 @@ addopts = [
     "-ra",
     "--strict-markers",
     "--strict-config",
-    "--cov=src.remediation_agent.graphs.nodes",
-    "--cov=src.remediation_agent.agents.decision_agent",
-    "--cov=src.remediation_agent.state.models",
-    "--cov=src.compliance_agent.api.health",
-    "--cov=src.compliance_agent.api.metrics",
-    "--cov=src.compliance_agent.api.routers.compliance_router",
-    "--cov=src.compliance_agent.api.routers.privacy_router",
-    "--cov=src.compliance_agent.api.routers.governance_router",
-    "--cov=src.compliance_agent.core.compliance_engine",
-    "--cov=src.compliance_agent.models.compliance_models",
-    "--cov=src.compliance_agent.utils.compliance_utils",
+    "--cov=src",  # Measure ALL source files, not just specific modules
     "--cov-report=term-missing",
     "--cov-report=html:htmlcov",
-    "--cov-report=xml",
+    "--cov-report=xml:coverage.xml",  # SonarQube reads this file
 ]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
@@ -35,23 +25,13 @@ omit = [
     "*/tests/*",
     "*/venv/*",
     "*/__pycache__/*",
-    "src/compliance_agent/clean_edgp_agent.py",
-    "src/compliance_agent/api/main.py",
-    "src/compliance_agent/api/routers/edgp_compliance_router.py",
-    "src/compliance_agent/api/routers/remediation_router.py",
-    "src/compliance_agent/core/edgp_compliance_orchestrator.py",
-    "src/compliance_agent/international_ai_agent.py",
-    "src/compliance_agent/models/edgp_models.py",
-    "src/compliance_agent/services/*",
-    "src/remediation_agent/agents/validation_agent.py",
-    "src/remediation_agent/agents/workflow_agent.py",
-    "src/remediation_agent/graphs/nodes/human_loop_node.py",
-    "src/remediation_agent/graphs/remediation_graph.py",
-    "src/remediation_agent/tools/notification_tool.py",
-    "src/remediation_agent/tools/remediation_validator.py",
-    "src/remediation_agent/tools/sqs_tool.py",
-    "src/remediation_agent/main.py",
+    "*/test_*",
+    "*/.venv/*",
 ]
+# Enable branch coverage for more accurate measurements
+branch = true
+# Include all source files even if not imported during tests
+relative_files = true
 
 [tool.coverage.report]
 exclude_lines = [
@@ -66,24 +46,9 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
-omit = [
-    "src/compliance_agent/clean_edgp_agent.py",
-    "src/compliance_agent/api/main.py",
-    "src/compliance_agent/api/routers/edgp_compliance_router.py",
-    "src/compliance_agent/api/routers/remediation_router.py",
-    "src/compliance_agent/core/edgp_compliance_orchestrator.py",
-    "src/compliance_agent/models/edgp_models.py",
-    "src/compliance_agent/services/*",
-    "src/compliance_agent/international_ai_agent.py",
-    "src/remediation_agent/agents/validation_agent.py",
-    "src/remediation_agent/agents/workflow_agent.py",
-    "src/remediation_agent/graphs/nodes/human_loop_node.py",
-    "src/remediation_agent/graphs/remediation_graph.py",
-    "src/remediation_agent/tools/notification_tool.py",
-    "src/remediation_agent/tools/remediation_validator.py",
-    "src/remediation_agent/tools/sqs_tool.py",
-    "src/remediation_agent/main.py",
-]
+# Don't omit any source files from the report - show actual coverage
+precision = 2
+show_missing = true
 
 [tool.black]
 line-length = 100

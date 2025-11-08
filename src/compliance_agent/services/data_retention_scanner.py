@@ -14,6 +14,8 @@ import asyncio
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.tracers import LangChainTracer
+from langchain.callbacks.base import BaseCallbackHandler
 
 from src.compliance_agent.models.edgp_models import (
     CustomerData, LocationData, VendorData, ProductData,
@@ -47,12 +49,28 @@ class DataRetentionScanner:
         if not api_key:
             logger.warning("No OpenAI API key found - AI analysis will be disabled")
             self.llm = None
+            self.callbacks = []
         else:
+            # Check if LangSmith tracing is enabled
+            langsmith_enabled = os.getenv('LANGCHAIN_TRACING_V2', '').lower() == 'true'
+            
+            if langsmith_enabled:
+                # Initialize LangSmith tracer for compliance agent only
+                langsmith_tracer = LangChainTracer(
+                    project_name=os.getenv('LANGCHAIN_PROJECT', 'edgp-ai-compliance')
+                )
+                self.callbacks = [langsmith_tracer]
+                logger.info(f"✅ LangSmith tracing enabled for Compliance Agent (Project: {os.getenv('LANGCHAIN_PROJECT', 'edgp-ai-compliance')})")
+            else:
+                self.callbacks = []
+                logger.info("ℹ️  LangSmith tracing disabled for Compliance Agent")
+            
             self.llm = ChatOpenAI(
                 api_key=api_key,
                 model=model_name,
                 temperature=0.1,
-                timeout=30
+                timeout=30,
+                callbacks=self.callbacks  # Attach callbacks for selective tracing
             )
             logger.info(f"Data Retention Scanner initialized with model: {model_name}")
         
@@ -474,8 +492,14 @@ Respond in JSON format:
             
             # Get AI analysis if available
             if self.llm:
+                # Debug: Log callback status
+                if self.callbacks:
+                    logger.info(f"🔍 LangSmith: Tracing LLM call for {record_code} (callbacks: {len(self.callbacks)})")
+                
+                # Pass callbacks explicitly to ensure LangSmith tracing
                 response = await self.llm.ainvoke(
-                    self.analysis_prompt.format(**prompt_vars)
+                    self.analysis_prompt.format(**prompt_vars),
+                    config={"callbacks": self.callbacks} if self.callbacks else None
                 )
                 
                 # Parse AI response

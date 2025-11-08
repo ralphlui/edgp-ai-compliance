@@ -173,12 +173,26 @@ class Settings(BaseSettings):
     @field_validator("environment")
     @classmethod
     def validate_environment(cls, v: str) -> str:
-        """Validate environment"""
-        allowed = ["development", "staging", "production", "sit"]
-        v = v.lower()
-        if v not in allowed:
-            raise ValueError(f"environment must be one of {allowed}")
-        return v
+        """Validate environment - K8s uses 'prd' which maps to 'production'"""
+        # Map K8s environment names to standard names
+        env_mapping = {
+            "prd": "production",
+            "prod": "production",
+            "dev": "development",
+            "development": "development",
+            "staging": "staging",
+            "sit": "sit"
+        }
+        
+        v_lower = v.lower()
+        if v_lower in env_mapping:
+            return env_mapping[v_lower]
+        
+        # If not in mapping, check if it's a valid environment name
+        allowed = ["development", "staging", "production", "sit", "prd", "prod"]
+        if v_lower not in allowed:
+            raise ValueError(f"environment must be one of {allowed} (or prd/prod/dev)")
+        return v_lower
 
     def is_production(self) -> bool:
         """Check if running in production"""
@@ -227,38 +241,91 @@ def create_settings() -> Settings:
     """Create settings instance with environment-specific configuration loading"""
     import os
     from pathlib import Path
+    from dotenv import load_dotenv
     
-    # First, load base .env to get APP_ENV
+    print("=" * 80)
+    print("🔧 ENVIRONMENT CONFIGURATION LOADING")
+    print("=" * 80)
+    
+    # First, load base .env to get APP_ENV (without override to set defaults)
     base_env_file = Path(".env")
     if base_env_file.exists():
-        from dotenv import load_dotenv
-        load_dotenv(base_env_file)
+        print(f"📄 Loading base configuration: .env")
+        load_dotenv(base_env_file, override=False)
+        print(f"   ✅ Base .env loaded")
+    else:
+        print(f"   ⚠️  Base .env not found")
     
     # Get APP_ENV from environment or command line
     app_env = os.getenv("APP_ENV", "development")
+    print(f"🌍 APP_ENV: {app_env}")
     
     # Determine which env file to load based on APP_ENV
+    # File naming: .env.development, .env.sit, .env.prd
     env_file_path = f".env.{app_env}"
     env_file = Path(env_file_path)
+    print(f"📂 Looking for file: {env_file_path}")
     
-    # If specific env file doesn't exist, fall back to .env
-    if not env_file.exists():
-        env_file = base_env_file
-        if not env_file.exists():
-            print(f"Warning: Neither {env_file_path} nor .env found, using defaults")
+    # Load environment-specific file WITHOUT override
+    # This allows K8s-injected env vars (or export commands) to take precedence
+    # File values only set defaults for missing variables
+    if env_file.exists():
+        print(f"📄 Loading environment-specific configuration: {env_file_path}")
+        load_dotenv(env_file, override=False)
+        print(f"   ✅ {env_file_path} loaded (sets defaults, K8s/export values take precedence)")
+    elif not base_env_file.exists():
+        print(f"   ⚠️  Neither {env_file_path} nor .env found, using defaults")
     else:
-        print(f"Loading configuration from: {env_file_path}")
+        print(f"   ℹ️  {env_file_path} not found, using base .env only")
     
-    # Create settings with the appropriate env file
-    class EnvironmentSettings(Settings):
-        model_config = SettingsConfigDict(
-            env_file=str(env_file) if env_file.exists() else None,
-            env_file_encoding="utf-8",
-            case_sensitive=False,
-            extra="ignore"
-        )
+    # Show what was loaded
+    print(f"🔑 Key Configuration Values (from environment):")
     
-    return EnvironmentSettings()
+    # AWS Region - check if it's a placeholder
+    aws_region = os.getenv('AWS_REGION', 'N/A')
+    if aws_region == 'AWS_REGION':
+        print(f"   AWS_REGION: {aws_region} ⚠️  (PLACEHOLDER - K8s should inject real value)")
+    else:
+        print(f"   AWS_REGION: {aws_region}")
+    
+    # AWS Credentials - check if they're placeholders
+    aws_access_key = os.getenv('AWS_ACCESS_KEY_ID', None)
+    if aws_access_key:
+        if aws_access_key == 'AWS_ACCESS_KEY_ID':
+            print(f"   AWS_ACCESS_KEY_ID: {aws_access_key} ⚠️  (PLACEHOLDER - K8s should inject real value)")
+        else:
+            print(f"   AWS_ACCESS_KEY_ID: {aws_access_key[:10]}... ✅")
+    else:
+        print(f"   AWS_ACCESS_KEY_ID: N/A")
+    
+    aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY', None)
+    if aws_secret_key:
+        if aws_secret_key == 'AWS_SECRET_ACCESS_KEY':
+            print(f"   AWS_SECRET_ACCESS_KEY: {aws_secret_key} ⚠️  (PLACEHOLDER - K8s should inject real value)")
+        else:
+            print(f"   AWS_SECRET_ACCESS_KEY: ****** ✅")
+    else:
+        print(f"   AWS_SECRET_ACCESS_KEY: N/A")
+    
+    print(f"   ENVIRONMENT: {os.getenv('ENVIRONMENT', 'N/A')}")
+    print(f"   AWS_RDS_ENABLED: {os.getenv('AWS_RDS_ENABLED', 'N/A')}")
+    print(f"   AWS_RDS_SECRET_NAME: {os.getenv('AWS_RDS_SECRET_NAME', 'N/A')}")
+    print(f"   OPENSEARCH_ENABLED: {os.getenv('OPENSEARCH_ENABLED', 'N/A')}")
+    
+    # Check if running in K8s
+    if os.path.exists('/var/run/secrets/kubernetes.io'):
+        print(f"   🏗️  Running in Kubernetes cluster")
+    elif os.getenv('KUBERNETES_SERVICE_HOST'):
+        print(f"   🏗️  Running in Kubernetes cluster")
+    else:
+        print(f"   💻 Running locally (not in K8s)")
+        if aws_region == 'AWS_REGION' or aws_access_key == 'AWS_ACCESS_KEY_ID':
+            print(f"   ⚠️  WARNING: Placeholder values detected! These will cause failures.")
+            print(f"   ℹ️  For local testing, use .env.development or .env.sit instead.")
+    print("=" * 80)
+    
+    # Create settings - Pydantic will read from os.environ which now has the correct overrides
+    return Settings()
 
 
 # Global settings instance

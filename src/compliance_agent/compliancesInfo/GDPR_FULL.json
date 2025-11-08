@@ -1,0 +1,794 @@
+[
+  {
+    "id": "GDPR-Article-1",
+    "title": "Article 1 – Subject Matter and Objectives",
+    "content": "This Regulation lays down rules relating to the protection of natural persons with regard to the processing of personal data and rules relating to the free movement of personal data.",
+    "category": "General Provisions",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-2",
+    "title": "Article 2 – Material Scope",
+    "content": "This Regulation applies to the processing of personal data wholly or partly by automated means and to the processing other than by automated means of personal data which form part of a filing system or are intended to form part of a filing system.",
+    "category": "General Provisions",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-3",
+    "title": "Article 3 – Territorial Scope",
+    "content": "This Regulation applies to the processing of personal data in the context of the activities of an establishment of a controller or processor in the Union, regardless of whether the processing takes place in the Union or not.",
+    "category": "General Provisions",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-4",
+    "title": "Article 4 – Definitions",
+    "content": "Defines 'personal data', 'processing', 'controller', 'processor', 'consent', 'data breach', and other key terms. Personal data means any information relating to an identified or identifiable natural person.",
+    "category": "Definitions",
+    "applies_to": ["Controller", "Processor", "Data Subject"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-5",
+    "title": "Article 5 – Principles Relating to Processing",
+    "content": "Personal data shall be: (a) processed lawfully, fairly and transparently; (b) collected for specified, explicit and legitimate purposes; (c) adequate, relevant and limited; (d) accurate and kept up to date; (e) kept in a form which permits identification for no longer than necessary; (f) processed securely.",
+    "category": "Principles",
+    "applies_to": ["Controller"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-6",
+    "title": "Article 6 – Lawfulness of Processing",
+    "content": "Processing shall be lawful only if and to the extent that at least one of the following applies: (a) consent; (b) contract; (c) legal obligation; (d) vital interests; (e) public task; (f) legitimate interests.",
+    "category": "Lawfulness",
+    "applies_to": ["Controller"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-7",
+    "title": "Article 7 – Conditions for Consent",
+    "content": "Where processing is based on consent, the controller shall be able to demonstrate that the data subject has consented. Consent must be freely given, specific, informed and unambiguous.",
+    "category": "Consent",
+    "applies_to": ["Controller", "Data Subject"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-8",
+    "title": "Article 8 – Conditions for Children's Consent",
+    "content": "Where child is below 16 years, processing shall be lawful only if consent is given or authorized by holder of parental responsibility. Member States may provide lower age down to 13 years.",
+    "category": "Consent",
+    "applies_to": ["Controller", "Data Subject"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-9",
+    "title": "Article 9 – Processing of Special Categories of Data",
+    "content": "Processing of personal data revealing racial or ethnic origin, political opinions, religious beliefs, trade union membership, genetic data, biometric data, health data, or sex life/sexual orientation is prohibited unless exceptions apply.",
+    "category": "Special Categories",
+    "applies_to": ["Controller"],
+    "risk_level": "CRITICAL"
+  },
+  {
+    "id": "GDPR-Article-10",
+    "title": "Article 10 – Processing of Criminal Conviction Data",
+    "content": "Processing of personal data relating to criminal convictions and offences shall be carried out only under the control of official authority or when authorized by Union or Member State law.",
+    "category": "Special Categories",
+    "applies_to": ["Controller"],
+    "risk_level": "CRITICAL"
+  },
+  {
+    "id": "GDPR-Article-11",
+    "title": "Article 11 – Processing Not Requiring Identification",
+    "content": "If purposes for which controller processes personal data do not require identification of a data subject by the controller, the controller shall not be obliged to maintain or process additional information to identify the data subject.",
+    "category": "Identification",
+    "applies_to": ["Controller"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-12",
+    "title": "Article 12 – Transparent Information and Communication",
+    "content": "Controller shall take appropriate measures to provide data subject with information in concise, transparent, intelligible and easily accessible form, using clear and plain language.",
+    "category": "Transparency",
+    "applies_to": ["Controller", "Data Subject"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-13",
+    "title": "Article 13 – Information When Data Collected from Data Subject",
+    "content": "Where personal data is collected from data subject, controller shall provide: identity, purposes, legal basis, recipients, retention period, rights, right to withdraw consent, right to lodge complaint, and whether statutory or contractual requirement.",
+    "category": "Transparency",
+    "applies_to": ["Controller", "Data Subject"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-14",
+    "title": "Article 14 – Information When Data Not Obtained from Data Subject",
+    "content": "Where personal data has not been obtained from data subject, controller shall provide information including source of data and categories of personal data concerned.",
+    "category": "Transparency",
+    "applies_to": ["Controller", "Data Subject"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-15",
+    "title": "Article 15 – Right of Access by Data Subject",
+    "content": "Data subject shall have right to obtain from controller confirmation whether personal data is being processed and access to the personal data and information about processing.",
+    "category": "Data Subject Rights",
+    "applies_to": ["Controller", "Data Subject"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-16",
+    "title": "Article 16 – Right to Rectification",
+    "content": "Data subject shall have right to obtain from controller without undue delay rectification of inaccurate personal data and to have incomplete personal data completed.",
+    "category": "Data Subject Rights",
+    "applies_to": ["Controller", "Data Subject"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-17",
+    "title": "Article 17 – Right to Erasure (Right to be Forgotten)",
+    "content": "Data subject shall have right to obtain from controller erasure of personal data without undue delay where: no longer necessary, consent withdrawn, objection to processing, unlawfully processed, or legal obligation requires erasure.",
+    "category": "Data Subject Rights",
+    "applies_to": ["Controller", "Data Subject"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-18",
+    "title": "Article 18 – Right to Restriction of Processing",
+    "content": "Data subject shall have right to obtain restriction of processing where: accuracy is contested, processing is unlawful, controller no longer needs data but subject needs it for legal claims, or subject has objected to processing.",
+    "category": "Data Subject Rights",
+    "applies_to": ["Controller", "Data Subject"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-19",
+    "title": "Article 19 – Notification Obligation",
+    "content": "Controller shall communicate any rectification, erasure or restriction to each recipient to whom personal data has been disclosed, unless this proves impossible or involves disproportionate effort.",
+    "category": "Data Subject Rights",
+    "applies_to": ["Controller"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-20",
+    "title": "Article 20 – Right to Data Portability",
+    "content": "Data subject shall have right to receive personal data in a structured, commonly used and machine-readable format and right to transmit that data to another controller.",
+    "category": "Data Subject Rights",
+    "applies_to": ["Controller", "Data Subject"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-21",
+    "title": "Article 21 – Right to Object",
+    "content": "Data subject shall have right to object to processing of personal data concerning them based on legitimate interests or for direct marketing purposes.",
+    "category": "Data Subject Rights",
+    "applies_to": ["Controller", "Data Subject"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-22",
+    "title": "Article 22 – Automated Individual Decision-Making",
+    "content": "Data subject shall have right not to be subject to a decision based solely on automated processing, including profiling, which produces legal effects or similarly significantly affects them.",
+    "category": "Data Subject Rights",
+    "applies_to": ["Controller", "Data Subject"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-23",
+    "title": "Article 23 – Restrictions",
+    "content": "Union or Member State law may restrict scope of obligations and rights when such restriction respects essence of fundamental rights and is necessary and proportionate measure.",
+    "category": "Restrictions",
+    "applies_to": ["Controller"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-24",
+    "title": "Article 24 – Responsibility of the Controller",
+    "content": "Controller shall implement appropriate technical and organisational measures to ensure and be able to demonstrate that processing is performed in accordance with this Regulation (accountability).",
+    "category": "Controller Obligations",
+    "applies_to": ["Controller"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-25",
+    "title": "Article 25 – Data Protection by Design and by Default",
+    "content": "Controller shall implement appropriate technical and organisational measures to implement data protection principles and safeguard rights of data subjects (privacy by design and by default).",
+    "category": "Controller Obligations",
+    "applies_to": ["Controller"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-26",
+    "title": "Article 26 – Joint Controllers",
+    "content": "Where two or more controllers jointly determine purposes and means of processing, they shall determine respective responsibilities by arrangement. Data subject may exercise rights against each controller.",
+    "category": "Controller Obligations",
+    "applies_to": ["Controller"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-27",
+    "title": "Article 27 – Representatives of Controllers Not Established in Union",
+    "content": "Where Article 3(2) applies, controller not established in Union shall designate representative in Union unless certain exemptions apply.",
+    "category": "Controller Obligations",
+    "applies_to": ["Controller"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-28",
+    "title": "Article 28 – Processor",
+    "content": "Where processing is carried out on behalf of controller, controller shall use only processors providing sufficient guarantees. Processing by processor shall be governed by contract.",
+    "category": "Processor Obligations",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-29",
+    "title": "Article 29 – Processing Under Authority of Controller or Processor",
+    "content": "Processor and any person acting under authority of controller or processor who has access to personal data shall not process that data except on instructions from controller.",
+    "category": "Processor Obligations",
+    "applies_to": ["Processor"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-30",
+    "title": "Article 30 – Records of Processing Activities",
+    "content": "Each controller and processor shall maintain record of processing activities under their responsibility containing specified information.",
+    "category": "Documentation",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-31",
+    "title": "Article 31 – Cooperation with Supervisory Authority",
+    "content": "Controller, processor and their representatives shall cooperate with supervisory authority on request in performance of its tasks.",
+    "category": "Supervision",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-32",
+    "title": "Article 32 – Security of Processing",
+    "content": "Controller and processor shall implement appropriate technical and organisational measures to ensure level of security appropriate to the risk, including pseudonymisation, encryption, confidentiality, integrity, availability, and resilience.",
+    "category": "Security",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "CRITICAL"
+  },
+  {
+    "id": "GDPR-Article-33",
+    "title": "Article 33 – Notification of Personal Data Breach to Supervisory Authority",
+    "content": "In case of personal data breach, controller shall without undue delay and where feasible not later than 72 hours after becoming aware notify supervisory authority unless unlikely to result in risk.",
+    "category": "Data Breach",
+    "applies_to": ["Controller"],
+    "risk_level": "CRITICAL"
+  },
+  {
+    "id": "GDPR-Article-34",
+    "title": "Article 34 – Communication of Personal Data Breach to Data Subject",
+    "content": "When personal data breach is likely to result in high risk to rights and freedoms of natural persons, controller shall communicate breach to data subject without undue delay.",
+    "category": "Data Breach",
+    "applies_to": ["Controller", "Data Subject"],
+    "risk_level": "CRITICAL"
+  },
+  {
+    "id": "GDPR-Article-35",
+    "title": "Article 35 – Data Protection Impact Assessment",
+    "content": "Where type of processing is likely to result in high risk to rights and freedoms, controller shall carry out assessment of impact of envisaged processing operations (DPIA).",
+    "category": "Risk Assessment",
+    "applies_to": ["Controller"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-36",
+    "title": "Article 36 – Prior Consultation",
+    "content": "Controller shall consult supervisory authority prior to processing where data protection impact assessment indicates high risk and controller has not taken measures to mitigate the risk.",
+    "category": "Risk Assessment",
+    "applies_to": ["Controller"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-37",
+    "title": "Article 37 – Designation of Data Protection Officer",
+    "content": "Controller and processor shall designate data protection officer where: processing is carried out by public authority, core activities require regular and systematic monitoring, or core activities consist of processing special categories of data at large scale.",
+    "category": "DPO",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-38",
+    "title": "Article 38 – Position of Data Protection Officer",
+    "content": "Controller and processor shall ensure DPO is involved in all issues relating to protection of personal data. DPO shall report to highest management level.",
+    "category": "DPO",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-39",
+    "title": "Article 39 – Tasks of Data Protection Officer",
+    "content": "DPO shall have at minimum tasks: inform and advise, monitor compliance, provide advice on DPIAs, cooperate with supervisory authority, and act as contact point.",
+    "category": "DPO",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-40",
+    "title": "Article 40 – Codes of Conduct",
+    "content": "Member States, supervisory authorities, and Commission shall encourage drawing up of codes of conduct intended to contribute to proper application of this Regulation.",
+    "category": "Codes of Conduct",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-41",
+    "title": "Article 41 – Monitoring of Approved Codes of Conduct",
+    "content": "Monitoring of compliance with code of conduct may be carried out by body which has appropriate level of expertise and is accredited by supervisory authority.",
+    "category": "Codes of Conduct",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-42",
+    "title": "Article 42 – Certification",
+    "content": "Member States, supervisory authorities, and Commission shall encourage establishment of data protection certification mechanisms and seals and marks to demonstrate compliance.",
+    "category": "Certification",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-43",
+    "title": "Article 43 – Certification Bodies",
+    "content": "Certification bodies shall be accredited by supervisory authority or by national accreditation body. Accreditation shall be based on approved criteria.",
+    "category": "Certification",
+    "applies_to": ["Certification Body"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-44",
+    "title": "Article 44 – General Principle for Transfers",
+    "content": "Any transfer of personal data to third country or international organisation shall take place only if controller and processor comply with conditions laid down in this Chapter.",
+    "category": "International Transfers",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-45",
+    "title": "Article 45 – Transfers Based on Adequacy Decision",
+    "content": "Transfer to third country may take place where Commission has decided that third country ensures adequate level of protection (adequacy decision).",
+    "category": "International Transfers",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-46",
+    "title": "Article 46 – Transfers Subject to Appropriate Safeguards",
+    "content": "In absence of adequacy decision, transfer may take place if controller or processor has provided appropriate safeguards (e.g., BCRs, standard contractual clauses, codes of conduct, certification).",
+    "category": "International Transfers",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-47",
+    "title": "Article 47 – Binding Corporate Rules",
+    "content": "Competent supervisory authority shall approve binding corporate rules if they are legally binding, confer enforceable rights, and fulfil specified requirements.",
+    "category": "International Transfers",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-48",
+    "title": "Article 48 – Transfers Not Authorised by Union Law",
+    "content": "Any judgment of court or tribunal and decision of administrative authority of third country requiring controller or processor to transfer or disclose personal data may be recognised or enforceable only if based on international agreement.",
+    "category": "International Transfers",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-49",
+    "title": "Article 49 – Derogations for Specific Situations",
+    "content": "In absence of adequacy decision or appropriate safeguards, transfer may take place if: explicit consent, necessary for contract, necessary for important public interest, or other specific derogations apply.",
+    "category": "International Transfers",
+    "applies_to": ["Controller"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-50",
+    "title": "Article 50 – International Cooperation",
+    "content": "Commission and supervisory authorities shall take appropriate steps to develop international cooperation mechanisms to facilitate effective enforcement of legislation for protection of personal data.",
+    "category": "International Cooperation",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-51",
+    "title": "Article 51 – Supervisory Authority",
+    "content": "Each Member State shall provide for one or more independent public authorities to be responsible for monitoring application of this Regulation (supervisory authority).",
+    "category": "Supervisory Authority",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-52",
+    "title": "Article 52 – Independence",
+    "content": "Each supervisory authority shall act with complete independence in performing its tasks and exercising its powers. Member shall remain free from external influence.",
+    "category": "Supervisory Authority",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-53",
+    "title": "Article 53 – General Conditions for Members",
+    "content": "Members of supervisory authority shall be appointed by parliament or government, have qualifications and experience, and not engage in incompatible occupation during term.",
+    "category": "Supervisory Authority",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-54",
+    "title": "Article 54 – Rules on Establishment",
+    "content": "Each Member State shall provide by law for establishment, legal status, and conditions of supervisory authority.",
+    "category": "Supervisory Authority",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-55",
+    "title": "Article 55 – Competence",
+    "content": "Each supervisory authority shall be competent for performance of tasks and exercise of powers on territory of its Member State.",
+    "category": "Supervisory Authority",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-56",
+    "title": "Article 56 – Competence of Lead Supervisory Authority",
+    "content": "Where controller or processor has establishments in several Member States, supervisory authority of main establishment shall be lead authority.",
+    "category": "Supervisory Authority",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-57",
+    "title": "Article 57 – Tasks",
+    "content": "Supervisory authority shall monitor and enforce application of Regulation, promote awareness, advise, handle complaints, conduct investigations, and cooperate with other authorities.",
+    "category": "Supervisory Authority",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-58",
+    "title": "Article 58 – Powers",
+    "content": "Supervisory authority shall have investigative powers (e.g., access to data, audits), corrective powers (e.g., warnings, orders, fines), and authorization/advisory powers.",
+    "category": "Supervisory Authority",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-59",
+    "title": "Article 59 – Activity Reports",
+    "content": "Each supervisory authority shall draw up annual report on its activities which may include list of types of infringement notified and types of measures taken.",
+    "category": "Supervisory Authority",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-60",
+    "title": "Article 60 – Cooperation Between Lead and Other Authorities",
+    "content": "Lead supervisory authority shall cooperate with other concerned supervisory authorities using one-stop-shop mechanism. Lead authority shall communicate relevant information to others.",
+    "category": "Cooperation",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-61",
+    "title": "Article 61 – Mutual Assistance",
+    "content": "Supervisory authorities shall provide each other with relevant information and mutual assistance to implement and apply Regulation consistently.",
+    "category": "Cooperation",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-62",
+    "title": "Article 62 – Joint Operations of Supervisory Authorities",
+    "content": "Supervisory authorities shall conduct joint operations including joint investigations and enforcement measures where appropriate.",
+    "category": "Cooperation",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-63",
+    "title": "Article 63 – Consistency Mechanism",
+    "content": "To contribute to consistent application of Regulation, supervisory authorities shall cooperate through consistency mechanism.",
+    "category": "Consistency",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-64",
+    "title": "Article 64 – Opinion of the Board",
+    "content": "Board shall issue opinion where supervisory authority intends to adopt measures relating to matters requiring consistency mechanism.",
+    "category": "Consistency",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-65",
+    "title": "Article 65 – Dispute Resolution by the Board",
+    "content": "In order to ensure correct and consistent application in individual cases, Board shall adopt binding decision where supervisory authorities concerned have raised objection or matter has been referred to it.",
+    "category": "Consistency",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-66",
+    "title": "Article 66 – Urgency Procedure",
+    "content": "In exceptional circumstances where supervisory authority considers urgent action needed to protect rights and freedoms, it may adopt provisional measures with specified period of validity.",
+    "category": "Consistency",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-67",
+    "title": "Article 67 – Exchange of Information",
+    "content": "Commission may adopt implementing acts of general scope to specify arrangements for exchange of information by electronic means between supervisory authorities.",
+    "category": "Consistency",
+    "applies_to": ["Supervisory Authority"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-68",
+    "title": "Article 68 – European Data Protection Board",
+    "content": "European Data Protection Board is hereby established as body of Union with legal personality. Board shall be represented by its Chair.",
+    "category": "EDPB",
+    "applies_to": ["EDPB"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-69",
+    "title": "Article 69 – Independence",
+    "content": "Board shall act independently when performing its tasks or exercising its powers.",
+    "category": "EDPB",
+    "applies_to": ["EDPB"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-70",
+    "title": "Article 70 – Tasks of the Board",
+    "content": "Board shall ensure consistent application of Regulation by issuing guidelines, recommendations, best practices, examining applications of supervisory authorities, and promoting cooperation.",
+    "category": "EDPB",
+    "applies_to": ["EDPB"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-71",
+    "title": "Article 71 – Reports",
+    "content": "Board shall draw up annual report regarding protection of natural persons with regard to processing in Union and third countries. Report shall be made public.",
+    "category": "EDPB",
+    "applies_to": ["EDPB"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-72",
+    "title": "Article 72 – Procedure",
+    "content": "Board shall take decisions by simple majority of its members unless otherwise provided. Board shall adopt its own rules of procedure.",
+    "category": "EDPB",
+    "applies_to": ["EDPB"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-73",
+    "title": "Article 73 – Chair",
+    "content": "Board shall elect chair and two deputy chairs from amongst its members by simple majority. Chair's term is 5 years renewable once.",
+    "category": "EDPB",
+    "applies_to": ["EDPB"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-74",
+    "title": "Article 74 – Tasks of the Chair",
+    "content": "Chair shall convene meetings, notify members of agendas, provide secretariat with resources needed, and ensure coordination between supervisory authorities.",
+    "category": "EDPB",
+    "applies_to": ["EDPB"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-75",
+    "title": "Article 75 – Secretariat",
+    "content": "Board shall have secretariat provided by European Data Protection Supervisor. Secretariat shall perform tasks under instructions of Chair.",
+    "category": "EDPB",
+    "applies_to": ["EDPB"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-76",
+    "title": "Article 76 – Confidentiality",
+    "content": "Discussions of Board shall be confidential where Board deems it necessary. Access to documents shall be based on principles in Regulation 1049/2001.",
+    "category": "EDPB",
+    "applies_to": ["EDPB"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-77",
+    "title": "Article 77 – Right to Lodge Complaint",
+    "content": "Every data subject shall have right to lodge complaint with supervisory authority if they consider processing of personal data infringes this Regulation.",
+    "category": "Remedies",
+    "applies_to": ["Data Subject"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-78",
+    "title": "Article 78 – Right to Effective Judicial Remedy Against Supervisory Authority",
+    "content": "Each natural or legal person shall have right to effective judicial remedy against legally binding decision of supervisory authority concerning them.",
+    "category": "Remedies",
+    "applies_to": ["Data Subject", "Controller", "Processor"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-79",
+    "title": "Article 79 – Right to Effective Judicial Remedy Against Controller or Processor",
+    "content": "Each data subject shall have right to effective judicial remedy where they consider their rights have been infringed as result of processing of personal data in non-compliance with Regulation.",
+    "category": "Remedies",
+    "applies_to": ["Data Subject"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-80",
+    "title": "Article 80 – Representation of Data Subjects",
+    "content": "Data subject shall have right to mandate not-for-profit body, organisation or association to lodge complaint, exercise rights, and claim compensation on their behalf.",
+    "category": "Remedies",
+    "applies_to": ["Data Subject"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-81",
+    "title": "Article 81 – Suspension of Proceedings",
+    "content": "Where competent court is informed that proceedings concerning same subject matter are pending in court in another Member State, it shall contact that court.",
+    "category": "Remedies",
+    "applies_to": ["Court"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-82",
+    "title": "Article 82 – Right to Compensation and Liability",
+    "content": "Any person who has suffered material or non-material damage as result of infringement of this Regulation shall have right to receive compensation from controller or processor.",
+    "category": "Liability",
+    "applies_to": ["Controller", "Processor", "Data Subject"],
+    "risk_level": "CRITICAL"
+  },
+  {
+    "id": "GDPR-Article-83",
+    "title": "Article 83 – General Conditions for Imposing Administrative Fines",
+    "content": "Infringements shall be subject to administrative fines up to 10,000,000 EUR or 2% of total worldwide annual turnover (whichever higher) or up to 20,000,000 EUR or 4% (whichever higher) depending on nature of infringement.",
+    "category": "Penalties",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "CRITICAL"
+  },
+  {
+    "id": "GDPR-Article-84",
+    "title": "Article 84 – Penalties",
+    "content": "Member States shall lay down rules on other penalties applicable to infringements of this Regulation and shall take measures to ensure they are implemented. Penalties shall be effective, proportionate and dissuasive.",
+    "category": "Penalties",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "HIGH"
+  },
+  {
+    "id": "GDPR-Article-85",
+    "title": "Article 85 – Processing and Freedom of Expression",
+    "content": "Member States shall reconcile right to protection of personal data with right to freedom of expression and information, including processing for journalistic purposes.",
+    "category": "Derogations",
+    "applies_to": ["Controller"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-86",
+    "title": "Article 86 – Processing and Public Access to Documents",
+    "content": "Personal data in official documents held by public authority may be disclosed in order to reconcile public access with right to protection of personal data.",
+    "category": "Derogations",
+    "applies_to": ["Controller"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-87",
+    "title": "Article 87 – Processing of National Identification Number",
+    "content": "Member States may further determine specific conditions for processing of national identification number or any other identifier of general application.",
+    "category": "Derogations",
+    "applies_to": ["Controller"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-88",
+    "title": "Article 88 – Processing in Employment Context",
+    "content": "Member States may provide more specific rules for processing in employment context including recruitment, performance, health and safety, and termination.",
+    "category": "Derogations",
+    "applies_to": ["Controller"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-89",
+    "title": "Article 89 – Processing for Archiving, Research and Statistics",
+    "content": "Processing for archiving purposes in public interest, scientific or historical research or statistical purposes shall be subject to appropriate safeguards for rights of data subjects.",
+    "category": "Derogations",
+    "applies_to": ["Controller"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-90",
+    "title": "Article 90 – Obligations of Secrecy",
+    "content": "Member States may adopt specific rules to set powers of supervisory authorities in relation to controllers or processors subject to obligation of professional secrecy.",
+    "category": "Derogations",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-91",
+    "title": "Article 91 – Church and Religious Association Rules",
+    "content": "Where churches and religious associations apply comprehensive rules at time Regulation enters into force, they may continue to apply those rules provided they are brought into line with this Regulation.",
+    "category": "Derogations",
+    "applies_to": ["Controller"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-92",
+    "title": "Article 92 – Exercise of Delegation",
+    "content": "Power to adopt delegated acts is conferred on Commission subject to conditions. Delegation may be revoked by European Parliament or Council.",
+    "category": "Delegated Acts",
+    "applies_to": ["Commission"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-93",
+    "title": "Article 93 – Committee Procedure",
+    "content": "Commission shall be assisted by committee. That committee shall be committee within meaning of Regulation 182/2011.",
+    "category": "Committee",
+    "applies_to": ["Commission"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-94",
+    "title": "Article 94 – Repeal of Directive 95/46/EC",
+    "content": "Directive 95/46/EC is repealed with effect from 25 May 2018. References to repealed Directive shall be construed as references to this Regulation.",
+    "category": "Final Provisions",
+    "applies_to": ["All"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-95",
+    "title": "Article 95 – Relationship with Directive 2002/58/EC",
+    "content": "This Regulation shall not impose additional obligations on natural or legal persons in relation to processing in connection with provision of publicly available electronic communications services in public networks in Union in relation to matters for which they are subject to specific obligations with same objective set out in Directive 2002/58/EC.",
+    "category": "Final Provisions",
+    "applies_to": ["Controller", "Processor"],
+    "risk_level": "MEDIUM"
+  },
+  {
+    "id": "GDPR-Article-96",
+    "title": "Article 96 – Relationship with Previously Concluded Agreements",
+    "content": "International agreements involving transfer of personal data to third countries or international organisations concluded by Member States prior to 24 May 2016 shall remain in force until amended, replaced or revoked.",
+    "category": "Final Provisions",
+    "applies_to": ["Member State"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-97",
+    "title": "Article 97 – Commission Reports",
+    "content": "By 25 May 2020 and every 4 years thereafter, Commission shall submit report on evaluation and review of this Regulation to European Parliament and Council.",
+    "category": "Final Provisions",
+    "applies_to": ["Commission"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-98",
+    "title": "Article 98 – Review of Other Union Legal Acts on Data Protection",
+    "content": "Commission shall submit legislative proposals with view to amending other Union legal acts on protection of personal data with view to ensuring uniform and consistent protection throughout Union.",
+    "category": "Final Provisions",
+    "applies_to": ["Commission"],
+    "risk_level": "LOW"
+  },
+  {
+    "id": "GDPR-Article-99",
+    "title": "Article 99 – Entry into Force and Application",
+    "content": "This Regulation shall enter into force on twentieth day following that of its publication in Official Journal. This Regulation shall apply from 25 May 2018.",
+    "category": "Final Provisions",
+    "applies_to": ["All"],
+    "risk_level": "LOW"
+  }
+]
