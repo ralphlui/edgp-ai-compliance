@@ -190,6 +190,8 @@ class AISecretsManager:
             "test-key",
             "xxx",
             "will_use_secrets_manager",  # Our new placeholder pattern
+            "langchain_api_key",  # Detect when value is the env var name itself
+            "langsmith_api_key",  # Detect when value is the env var name itself
         ]
 
         value_lower = value.lower()
