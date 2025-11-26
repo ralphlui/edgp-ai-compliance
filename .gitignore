@@ -165,3 +165,7 @@ logs/
 # Temporary files
 tmp/
 temp/
+*.md
+*.txt
+*.puml
+*.png
